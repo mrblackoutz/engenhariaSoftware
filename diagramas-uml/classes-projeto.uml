@@ -1,0 +1,95 @@
+@startuml
+title Diagrama de Classes de Projeto - MesaFácil
+
+class Cliente {
+    - id: int
+    - cpf: string
+    - preferencias: string
+    - nome: string
+    - email: string
+    - telefone: string
+    - senha: string
+    + registrarReserva(reserva: Reserva): void
+    + avaliarReserva(reserva: Reserva, nota: int, comentario: string): void
+}
+
+class Restaurante {
+    - cnpj: string
+    - razaoSocial: string
+    - nomeFantasia: string
+    - endereco: string
+    - horarioFuncionamento: string
+    - tempoConfirmacao: int
+    - fotosDoRestaurante: string
+    - cardapio: string
+    - avaliacaoMedia: float
+    + disponibilizarMesas(listaSalas: List<Salao>): void
+    + aprovarReserva(reserva: Reserva): void
+    + acessarRelatorios(): List<Relatorio>
+    + atualizarAvaliacaoMedia(novaAvaliacao: float): void
+}
+
+class BookingMesas {
+    - lista_salao: List<Salao>
+    + disponibilizarSalao(salao: Salao): void
+    + listarMesasDisponiveis(dataHora: datetime): List<Mesa>
+}
+
+class Salao {
+    - id: int
+    - nomeLocal: string
+    - tipoLocal: string
+    - caracteristicas: string
+    + adicionarMesa(mesa: Mesa): void
+    + listarMesas(): List<Mesa>
+}
+
+class Mesa {
+    - id: int
+    - numero: int
+    - capacidade: int
+    - status: string
+    + reservarMesa(horaroio: datetime, duracao: float): void
+    + liberarMesa(): void
+}
+
+class Reserva {
+    - id: int
+    - dataHora: datetime
+    - quantidadePessoas: int
+    - status: string
+    - valorPago: double
+    + confirmarReserva(): void
+    + cancelarReserva(): void
+}
+
+class Avaliacao {
+    - id: int
+    - nota: int
+    - comentario: string
+    - dataHora: datetime
+}
+
+class Pagamento {
+    - id: int
+    - valor: double
+    - status: string
+    - dataHora: datetime
+    + registrarPagamento(): void
+    + consultarStatus(): string
+}
+
+' ==== Relacionamentos ====
+
+Reserva "1" --> "1" Mesa : reserva
+Restaurante "1" --> "0..*" Reserva : gerencia
+Restaurante "1" --> "1" BookingMesas : possui
+Restaurante "1" --> "0..*" Pagamento: recebe
+Avaliacao "1" --> "1" Restaurante : avalia
+BookingMesas "1" --> "1..*" Salao : disponibiliza
+Salao "1" --> "1..*" Mesa : possui
+Reserva "0..1" --> "1" Avaliacao : gera
+Reserva "1" --> "1" Pagamento : registra
+Cliente "1" --> "0..*" Reserva : realiza
+Cliente "1" --> "0..*" Pagamento: paga
+@enduml
