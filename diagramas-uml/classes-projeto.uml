@@ -1,16 +1,30 @@
 @startuml
 title Diagrama de Classes de Projeto - MesaFácil
 
-class Cliente {
+class Usuario {
     - id: int
+    - email: string
+    - login: string
+    - senha: string
+    - telefone: string
+    + validarLogin(login: string, senha: string): boolean
+    + enviarEmail(remetente: string, tituloMsg: string, corpoMsg: string): void
+    + enviarSMS(remetente: string, textoMsg: string): void
+}
+
+class Cliente {
     - cpf: string
     - preferencias: string
     - nome: string
-    - email: string
-    - telefone: string
-    - senha: string
     + registrarReserva(reserva: Reserva): void
     + avaliarReserva(reserva: Reserva, nota: int, comentario: string): void
+}
+
+class StaffRestaurante {
+    - nome: string
+    - perfilDeAcesso: List<string>
+    + validarAcessoJornada(paginaAcessada: string): boolean
+    + aprovarReserva(reserva: Reserva): void
 }
 
 class Restaurante {
@@ -24,8 +38,6 @@ class Restaurante {
     - cardapio: string
     - avaliacaoMedia: float
     + disponibilizarMesas(listaSalas: List<Salao>): void
-    + aprovarReserva(reserva: Reserva): void
-    + acessarRelatorios(): List<Relatorio>
     + atualizarAvaliacaoMedia(novaAvaliacao: float): void
 }
 
@@ -59,7 +71,10 @@ class Reserva {
     - quantidadePessoas: int
     - status: string
     - valorPago: double
+    - mesaReservada: mesa
+    - donoReserva: Cliente
     + confirmarReserva(): void
+    + visualizarReserva(): void
     + cancelarReserva(): void
 }
 
@@ -68,6 +83,7 @@ class Avaliacao {
     - nota: int
     - comentario: string
     - dataHora: datetime
+    + gravarAvaliacao(): void
 }
 
 class Pagamento {
@@ -81,10 +97,12 @@ class Pagamento {
 
 ' ==== Relacionamentos ====
 
+Usuario <|-- Cliente
+Usuario <|-- StaffRestaurante
+StaffRestaurante "1..*" --> "0..*" Reserva: aprova
 Reserva "1" --> "1" Mesa : reserva
 Restaurante "1" --> "0..*" Reserva : gerencia
 Restaurante "1" --> "1" BookingMesas : possui
-Restaurante "1" --> "0..*" Pagamento: recebe
 Avaliacao "1" --> "1" Restaurante : avalia
 BookingMesas "1" --> "1..*" Salao : disponibiliza
 Salao "1" --> "1..*" Mesa : possui
