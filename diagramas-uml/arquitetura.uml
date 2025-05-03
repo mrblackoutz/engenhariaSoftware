@@ -1,0 +1,58 @@
+@startuml
+
+title Arquitetura em Camadas - MesaFácil
+
+' ==== CAMADAS DA ARQUITETURA E COMPONENTES ====
+
+package "Interface" as App {
+    [AppCliente] as AppCli
+    [AppRestaurante] as AppRes
+    
+}
+
+package "Controlador" as Cntrl {
+    [ControladorRelatorios] as CntrlRela
+    [ControladorReservas] as CntrlRsrv
+}
+
+package "Gerenciadores" as Geren {
+    [GerenciadorAcessos] as GerAcss
+    [GerenciadorNotificacoes] as GerNot
+    [GerenciadorPagamentos] as GerPay
+}
+
+package "Base de dados" as DBs {
+    [BasesReservas] as RsrvDB
+    [BasesClientes] as CliDB
+    [BasesRestaurantes] as ResDB
+    [BasesFuncionarios] as FuncDB
+    [BasesDesempenhoRestaurante] as DesResDB
+}
+
+package "Processador de Email" as Email {
+    [ProcessadorEmail] as ProcEmail
+}
+
+package "Processador Pagamentos" as ProcPay {
+    [ProcessadorPagamentos] as PayAPI
+}
+
+package "MiddleWare" as MidWr {
+   [Segurança] as Seg
+   [Comunicação] as Com
+}
+
+' ==== RELACIONAMENTOS ====
+App --> MidWr
+Cntrl --> MidWr
+Geren --> MidWr
+DBs --> MidWr
+
+App --> Cntrl
+Cntrl --> Geren
+Cntrl --> DBs
+Geren --> Email
+Geren --> ProcPay
+Geren --> DBs
+
+@enduml
