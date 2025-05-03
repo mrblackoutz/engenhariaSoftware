@@ -1,0 +1,64 @@
+@startuml
+
+    title Diagrama de Componentes - MesaFácil
+
+    ' == DECLARAÇÃO DOS COMPONENTES ==
+
+    package "Componentes Funcionais" as ComFum{
+        ' // Camada de de interface
+        [AppCliente]                 as AppCli
+        [AppRestaurante]             as AppRes
+
+       ' // Camada do controlador
+        [ControladorRelatorios]      as CntrlRela
+        [ControladorReservas]        as CntrlRsrv
+
+        ' // Camada do Gerenciador
+        [GerenciadorAcessos]         as GerAcss
+        [GerenciadorNotificacoes]    as GerNot
+        [GerenciadorPagamentos]      as GerPag
+
+        ' // Camada de processador de pagamentos
+        [ProcessadorPagamentos]      as PrcPag
+
+        ' // Camada de processador de emails
+        [ProcessadorEmail]           as PrcEmail
+
+        ' // Camada de Base de dados
+        [BasesReserva]               as RsrvDB
+        [BasesClientes]              as CliDB
+        [BasesRestaurantes]          as ResDB
+        [BasesFuncionarios]          as FuncDB
+        [BasesDesempenhoRestaurante] as DesResDB
+    }
+    
+    ' // Camada de MiddleWare
+    [Segurança]                  as Seg
+    [Comunicação]                as Com
+    
+    ' == INTERAÇÕES ==
+
+    AppCli --> CntrlRsrv
+
+    AppRes --> CntrlRsrv
+    AppRes --> CntrlRela
+
+    CntrlRsrv --> GerPag
+    CntrlRsrv --> GerNot
+    CntrlRsrv --> CliDB
+    CntrlRsrv --> ResDB
+    CntrlRsrv --> RsrvDB
+
+    CntrlRela --> GerAcss
+    CntrlRela --> DesResDB
+
+    GerPag --> PrcPag    
+
+    GerAcss --> FuncDB
+
+    GerNot --> PrcEmail
+
+    Seg --> ComFum
+    Com --> ComFum
+
+@enduml
