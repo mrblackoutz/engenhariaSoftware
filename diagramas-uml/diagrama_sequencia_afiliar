@@ -1,0 +1,30 @@
+@startuml
+actor Cliente
+boundary AfiliarGUI <<boundary>>
+control ControladorAfiliar <<control>>
+database BaseDadosClientes
+ 
+Cliente -> AfiliarGUI : FazCadastro(email,senha,nome)
+activate AfiliarGUI
+AfiliarGUI -> ControladorAfiliar : FazCadastro(email,senha,nome)
+activate ControladorAfiliar
+ControladorAfiliar -> BaseDadosClientes : EnviaDados(email,senha,nome)
+activate BaseDadosClientes
+BaseDadosClientes -> BaseDadosClientes : ValidarDados()
+activate BaseDadosClientes
+deactivate BaseDadosClientes
+
+
+alt Cadastro Válido
+    BaseDadosClientes -> ControladorAfiliar : MostraSucessoCadastro()
+    ControladorAfiliar -> AfiliarGUI : MostraSucessoCadastro()
+else Cadastro Inválido
+    BaseDadosClientes -> ControladorAfiliar : MostraCadastroInvalido()
+    deactivate BaseDadosClientes
+    ControladorAfiliar -> AfiliarGUI : MostraCadastroInvalido()
+    deactivate ControladorAfiliar
+end
+deactivate AfiliarGUI
+
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+actor Cliente
+boundary TelaReserva
+control ControladorReserva
+entity BancoDados
+boundary ServicoPagamento
+
+Cliente -> TelaReserva : SelecionarReserva(restaurante, data, horario)
+activate TelaReserva
+TelaReserva -> ControladorReserva : Solicitar disponibilidade(restaurante, data, horario)
+activate ControladorReserva
+ControladorReserva -> BancoDados : ConsultarMesasDisponiveis()
+activate BancoDados
+BancoDados --> ControladorReserva : Retorna disponibilidade
+deactivate BancoDados
+ControladorReserva --> TelaReserva : Mostra disponibilidade
+deactivate ControladorReserva
+deactivate TelaReserva
+
+Cliente -> TelaReserva : ConfirmaReserva(bool x)
+activate TelaReserva
+TelaReserva -> ControladorReserva : EnviaDadosReserva()
+activate ControladorReserva
+
+alt Pagamento Necessário
+    ControladorReserva -> ServicoPagamento : ProcessaPagamento(dados)
+activate ServicoPagamento
+    ServicoPagamento --> ControladorReserva : Pagamento confirmado
+deactivate ServicoPagamento
+end
+
+ControladorReserva -> BancoDados : CriarReserva(restaurante, data, horario)
+activate BancoDados
+BancoDados --> ControladorReserva : Confirma criação
+deactivate BancoDados
+ControladorReserva --> TelaReserva : Exibir confirmação
+deactivate ControladorReserva
+deactivate TelaReserva
+@enduml
