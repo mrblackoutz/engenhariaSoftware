@@ -1,0 +1,34 @@
+@startuml
+actor "Restaurante" as Restaurante
+
+boundary ReservaUI
+control ReservaController
+entity Reserva
+
+== Aprovar Reserva ==
+
+Restaurante -> ReservaUI: solicitarAprovacao(reservaID)
+activate ReservaUI
+
+ReservaUI -> ReservaController: solicitarAprovacao(reservaID)
+activate ReservaController
+
+ReservaController -> Reserva: buscar(reservaID)
+activate Reserva
+Reserva --> ReservaController: dadosReserva
+deactivate Reserva
+
+alt reserva válida
+    ReservaController -> Reserva: aprovar()
+    activate Reserva
+    Reserva --> ReservaController: confirmacao
+    deactivate Reserva
+
+    ReservaController -> ReservaUI: mostrarMensagem("Reserva aprovada com sucesso")
+else inválida ou não existe
+    ReservaController -> ReservaUI: mostrarMensagem("Erro: reserva não encontrada ou inválida")
+end
+
+deactivate ReservaController
+deactivate ReservaUI
+@enduml
