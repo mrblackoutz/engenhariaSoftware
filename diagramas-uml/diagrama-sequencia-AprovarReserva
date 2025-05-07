@@ -3,6 +3,7 @@ actor "Restaurante" as Restaurante
 
 boundary ReservaUI
 control ReservaController
+collections "reservas : Reserva" as ColecaoReservas
 entity Reserva
 
 == Aprovar Reserva ==
@@ -13,10 +14,10 @@ activate ReservaUI
 ReservaUI -> ReservaController: solicitarAprovacao(reservaID)
 activate ReservaController
 
-ReservaController -> Reserva: buscar(reservaID)
-activate Reserva
-Reserva --> ReservaController: dadosReserva
-deactivate Reserva
+ReservaController -> ColecaoReservas: buscar(reservaID)
+activate ColecaoReservas
+ColecaoReservas --> ReservaController: dadosReserva (Reserva)
+deactivate ColecaoReservas
 
 alt reserva válida
     ReservaController -> Reserva: aprovar()
