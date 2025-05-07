@@ -1,25 +1,29 @@
-
 @startuml
-actor Usuário
+actor Restaurante
 boundary ContrataPlanoGUI
 control ControladorContrataPlano
 participant Plano
+collections "plano : Plano" as planos
 participant Pagamento
-participant Restaurante
+participant "Restaurante" as restaurante1
 
-Usuário -> ContrataPlanoGUI : acessarTelaPlanos()
+Restaurante -> ContrataPlanoGUI : acessarTelaPlanos()
 activate ContrataPlanoGUI
 ContrataPlanoGUI -> ControladorContrataPlano : listarPlanos()
 activate ControladorContrataPlano
 ControladorContrataPlano -> Plano : getPlanosDisponiveis()
 activate Plano
-Plano --> ControladorContrataPlano : listaPlanos
+Plano -> planos : getPlanosDisponiveis()
+activate planos
+planos --> Plano : listaPlanos
+deactivate planos
+Plano -> ControladorContrataPlano : ExibeInfoPlanos()
 deactivate Plano
 ControladorContrataPlano -> ContrataPlanoGUI : exibirPlanos(listaPlanos)
 deactivate ControladorContrataPlano
 deactivate ContrataPlanoGUI
 
-Usuário -> ContrataPlanoGUI : contratarPlano(planoId)
+Restaurante -> ContrataPlanoGUI : contratarPlano()
 activate ContrataPlanoGUI
 ContrataPlanoGUI -> ControladorContrataPlano : contratarPlano(planoId, dadosPagamento)
 activate ControladorContrataPlano
@@ -29,9 +33,9 @@ Pagamento --> ControladorContrataPlano : pagamentoAprovado
 deactivate Pagamento
 
 alt pagamento aprovado
-    ControladorContrataPlano -> Restaurante : associarPlano(planoId)
-    activate Restaurante
-    deactivate Restaurante
+    ControladorContrataPlano -> restaurante1 : associarPlano(planoId)
+    activate restaurante1
+    deactivate restaurante1
     ControladorContrataPlano -> ContrataPlanoGUI : confirmarAtivacao()
 else pagamento recusado
     ControladorContrataPlano -> ContrataPlanoGUI : notificarErro()
