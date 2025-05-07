@@ -1,0 +1,28 @@
+@startuml
+actor "Restaurante" as Restaurante
+
+boundary RelatorioUI
+control RelatorioController
+entity Relatorio
+
+== Acessar Relatórios ==
+
+Restaurante -> RelatorioUI: solicitarRelatorio(tipo, periodo)
+activate RelatorioUI
+
+RelatorioUI -> RelatorioController: gerarRelatorio(tipo, periodo)
+activate RelatorioController
+
+RelatorioController -> Relatorio: gerar(tipo, periodo)
+activate Relatorio
+Relatorio --> RelatorioController: dadosRelatorio
+deactivate Relatorio
+
+RelatorioController -> RelatorioUI: exibirRelatorio(dadosRelatorio)
+deactivate RelatorioController
+
+RelatorioUI -> Restaurante: mostrarRelatorio()
+activate Restaurante
+deactivate Restaurante
+deactivate RelatorioUI
+@enduml
