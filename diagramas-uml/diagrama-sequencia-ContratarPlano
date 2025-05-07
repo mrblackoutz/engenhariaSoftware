@@ -1,0 +1,53 @@
+@startuml
+actor "Restaurante" as Restaurante
+
+boundary PlanoUI
+control PlanoController
+entity Plano
+
+== Contratar Plano ==
+
+Restaurante -> PlanoUI: selecionarPlano(planoID)
+activate PlanoUI
+
+PlanoUI -> PlanoController: selecionarPlano(planoID)
+activate PlanoController
+
+PlanoController -> Plano: validarPlano(planoID)
+activate Plano
+Plano --> PlanoController: detalhesPlano(preço, termos)
+deactivate Plano
+
+PlanoController -> PlanoUI: exibirDetalhesPlano(preço, termos)
+deactivate PlanoController
+
+PlanoUI -> Restaurante: mostrarDetalhesPlano()
+activate Restaurante
+deactivate Restaurante
+deactivate PlanoUI
+
+Restaurante -> PlanoUI: confirmarContratacao(dadosPagamento)
+activate PlanoUI
+
+PlanoUI -> PlanoController: confirmarContratacao(dadosPagamento)
+activate PlanoController
+
+PlanoController -> Plano: processarPagamento(dadosPagamento)
+activate Plano
+Plano --> PlanoController: resultadoPagamento(sucesso/falha)
+deactivate Plano
+
+alt pagamento bem‑sucedido
+    PlanoController -> Plano: ativarPlano(planoID, restauranteID)
+    activate Plano
+    Plano --> PlanoController: confirmacaoAtivacao
+    deactivate Plano
+
+    PlanoController -> PlanoUI: mostrarMensagem("Plano contratado com sucesso")
+else pagamento recusado
+    PlanoController -> PlanoUI: mostrarMensagem("Pagamento recusado, tente novamente")
+end
+
+deactivate PlanoController
+deactivate PlanoUI
+@enduml
