@@ -1,22 +1,27 @@
 @startuml
-actor Usuario
+actor Cliente
 
 boundary CancelaReservaGUI <<boundary>>
 control ControladorCancelaReserva <<controller>>
+collections "reserva : Reserva" as reservas
 participant Reserva
 participant Pagamento
 participant BookingMesas
 participant Restaurante
 
-Usuario -> CancelaReservaGUI : cancelarReserva(reservaId)
+Cliente -> CancelaReservaGUI : cancelarReserva()
 activate CancelaReservaGUI
 CancelaReservaGUI -> ControladorCancelaReserva : cancelarReserva(reservaId)
 activate ControladorCancelaReserva
 
-ControladorCancelaReserva -> Reserva : buscarReserva(reservaId)
+ControladorCancelaReserva -> reservas : buscarReserva(reservaId)
+activate reservas
+reservas -> Reserva : BuscaInfoReserva()
 activate Reserva
-Reserva --> ControladorCancelaReserva : dadosReserva
+Reserva --> reservas : Retorna Info
 deactivate Reserva
+reservas --> ControladorCancelaReserva : dadosReserva
+deactivate reservas
 
 alt Reserva com pagamento
     ControladorCancelaReserva -> Pagamento : verificarPagamento(reservaId)
@@ -27,12 +32,13 @@ deactivate Pagamento
 
 ControladorCancelaReserva -> Reserva : atualizarStatus("Cancelada")
 activate Reserva
-activate BookingMesas
 Reserva -> BookingMesas : liberarMesa(data, hora, mesa)
+activate BookingMesas
 deactivate BookingMesas
-activate Restaurante
 Reserva -> Restaurante : notificarCancelamento(reservaId)
+activate Restaurante
 deactivate Restaurante
+Reserva --> ControladorCancelaReserva : ConfirmaSucessoCancelamento
 deactivate Reserva
 
 ControladorCancelaReserva -> CancelaReservaGUI : confirmarCancelamento()
