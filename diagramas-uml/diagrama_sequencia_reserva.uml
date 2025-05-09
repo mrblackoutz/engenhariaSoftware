@@ -32,6 +32,10 @@ end
 
 ControladorFazReserva -> Reserva : CriarReserva(restaurante, data, horario, mesa)
 activate Reserva
+Reserva -> BookingMesas : AtualizarBooking()
+activate BookingMesas
+BookingMesas --> Reserva : Confirma Atualizacao
+deactivate BookingMesas
 Reserva --> ControladorFazReserva : Confirma criação
 deactivate Reserva
 ControladorFazReserva --> FazReservaGUI : Exibir confirmação
