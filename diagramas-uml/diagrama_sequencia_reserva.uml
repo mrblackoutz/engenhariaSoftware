@@ -1,39 +1,40 @@
 @startuml
 actor Cliente
-boundary TelaReserva
-control ControladorReserva
-entity BancoDados
-boundary ServicoPagamento
+boundary FazReservaGUI <<boundary>>
+control ControladorFazReserva <<control>>
+participant Reserva
+participant BookingMesas
+participant Pagamento
 
-Cliente -> TelaReserva : SelecionarReserva(restaurante, data, horario)
-activate TelaReserva
-TelaReserva -> ControladorReserva : Solicitar disponibilidade(restaurante, data, horario)
-activate ControladorReserva
-ControladorReserva -> BancoDados : ConsultarMesasDisponiveis()
-activate BancoDados
-BancoDados --> ControladorReserva : Retorna disponibilidade
-deactivate BancoDados
-ControladorReserva --> TelaReserva : Mostra disponibilidade
-deactivate ControladorReserva
-deactivate TelaReserva
+Cliente -> FazReservaGUI : SelecionarReserva()
+activate FazReservaGUI
+FazReservaGUI -> ControladorFazReserva : Solicitar disponibilidade(restaurante, data, horario)
+activate ControladorFazReserva
+ControladorFazReserva -> BookingMesas : ConsultarMesasDisponiveis(restaurante, data, horario)
+activate BookingMesas
+BookingMesas --> ControladorFazReserva : Retorna disponibilidade
+deactivate BookingMesas
+ControladorFazReserva --> FazReservaGUI : Mostra disponibilidade
+deactivate ControladorFazReserva
+deactivate FazReservaGUI
 
-Cliente -> TelaReserva : ConfirmaReserva(bool x)
-activate TelaReserva
-TelaReserva -> ControladorReserva : EnviaDadosReserva()
-activate ControladorReserva
+Cliente -> FazReservaGUI : ConfirmaReserva()
+activate FazReservaGUI
+FazReservaGUI -> ControladorFazReserva : EnviaDadosReserva(restaurante, data, horario, mesa)
+activate ControladorFazReserva
 
 alt Pagamento Necessário
-    ControladorReserva -> ServicoPagamento : ProcessaPagamento(dados)
-activate ServicoPagamento
-    ServicoPagamento --> ControladorReserva : Pagamento confirmado
-deactivate ServicoPagamento
+    ControladorFazReserva -> Pagamento : ProcessaPagamento()
+    activate Pagamento
+    Pagamento --> ControladorFazReserva : Pagamento confirmado
+    deactivate Pagamento
 end
 
-ControladorReserva -> BancoDados : CriarReserva(restaurante, data, horario)
-activate BancoDados
-BancoDados --> ControladorReserva : Confirma criação
-deactivate BancoDados
-ControladorReserva --> TelaReserva : Exibir confirmação
-deactivate ControladorReserva
-deactivate TelaReserva
+ControladorFazReserva -> Reserva : CriarReserva(restaurante, data, horario, mesa)
+activate Reserva
+Reserva --> ControladorFazReserva : Confirma criação
+deactivate Reserva
+ControladorFazReserva --> FazReservaGUI : Exibir confirmação
+deactivate ControladorFazReserva
+deactivate FazReservaGUI
 @enduml
