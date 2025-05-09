@@ -2,28 +2,47 @@
 actor Cliente
 boundary AfiliarGUI <<boundary>>
 control ControladorAfiliar <<control>>
-database BaseDadosClientes
+participant "Cliente" as cliente
+collections "cliente : Cliente" as clientes
  
-Cliente -> AfiliarGUI : FazCadastro(email,senha,nome)
+Cliente -> AfiliarGUI : FazLogin()
 activate AfiliarGUI
-AfiliarGUI -> ControladorAfiliar : FazCadastro(email,senha,nome)
+AfiliarGUI -> ControladorAfiliar : SolicitaLogin(email,senha)
 activate ControladorAfiliar
-ControladorAfiliar -> BaseDadosClientes : EnviaDados(email,senha,nome)
-activate BaseDadosClientes
-BaseDadosClientes -> BaseDadosClientes : ValidarDados()
-activate BaseDadosClientes
-deactivate BaseDadosClientes
+ControladorAfiliar -> clientes : GetCliente(email,senha)
+activate clientes
+clientes --> ControladorAfiliar : Retorna Dados
+deactivate clientes
 
-
-alt Cadastro Válido
-    BaseDadosClientes -> ControladorAfiliar : MostraSucessoCadastro()
-    ControladorAfiliar -> AfiliarGUI : MostraSucessoCadastro()
-else Cadastro Inválido
-    BaseDadosClientes -> ControladorAfiliar : MostraCadastroInvalido()
-    deactivate BaseDadosClientes
-    ControladorAfiliar -> AfiliarGUI : MostraCadastroInvalido()
+alt Cliente Existente
+    ControladorAfiliar -> ControladorAfiliar : EfetuaLogin()
+    activate ControladorAfiliar
     deactivate ControladorAfiliar
+    ControladorAfiliar -> AfiliarGUI : MostraSucessoLogin()
+    
+else Não Existente
+    
+    ControladorAfiliar -> AfiliarGUI : SolicitarCadastro()
+    Cliente -> AfiliarGUI : FazCadastro()
+    AfiliarGUI -> ControladorAfiliar : FazerNovoCadastro(email,senha,nome)
+    ControladorAfiliar -> cliente : create Cliente(email,senha,nome)
+    activate cliente
+    alt Cadastro Válido
+        cliente -> clientes : adicionarNovoCliente(cliente)
+        activate clientes
+        clientes --> cliente : cliente adicionado
+        deactivate clientes
+        cliente --> ControladorAfiliar : Retorna Sucesso
+        ControladorAfiliar -> AfiliarGUI : ExibirSucessoCadastro()
+    else Cadastro Inválido
+        cliente --> ControladorAfiliar : Retorna Erro
+        deactivate cliente
+        ControladorAfiliar -> AfiliarGUI : ExibirErroCadastro()
+    end
+    
 end
+
+deactivate ControladorAfiliar
 deactivate AfiliarGUI
 
 
