@@ -1,0 +1,39 @@
+@startuml
+actor Restaurante
+
+boundary DisponibilizaMesasGUI <<boundary>>
+control ControladorDisponibilizaMesas <<control>>
+participant BookingMesas
+participant Salao
+participant Mesa
+
+Restaurante -> DisponibilizaMesasGUI : DisponibilizarMesas()
+activate DisponibilizaMesasGUI
+
+DisponibilizaMesasGUI -> ControladorDisponibilizaMesas : enviarDadosDisponibilizacao(data, horario, saloes, mesas)
+activate ControladorDisponibilizaMesas
+
+ControladorDisponibilizaMesas -> BookingMesas : criarOuAtualizarDisponibilidade(data, horario)
+activate BookingMesas
+BookingMesas --> ControladorDisponibilizaMesas : disponibilidadeCriadaOuAtualizada
+deactivate BookingMesas
+
+loop para cada salao
+    ControladorDisponibilizaMesas -> Salao : ativarSalao(salaoId)
+    activate Salao
+
+    loop para cada mesa
+        Salao -> Mesa : definirDisponibilidade(data, horario)
+        activate Mesa
+        deactivate Mesa
+    end
+
+    Salao --> ControladorDisponibilizaMesas : salaoAtualizado
+    deactivate Salao
+end
+
+ControladorDisponibilizaMesas -> DisponibilizaMesasGUI : confirmarDisponibilizacao()
+deactivate ControladorDisponibilizaMesas
+deactivate DisponibilizaMesasGUI
+
+@enduml
