@@ -41,26 +41,28 @@ alt reserva válida
     alt aprovada
         AprovarReservaController -> Reserva: AtualizarStatusAprovado()
         activate Reserva
-        Reserva -> Cliente : NotificaAprovacao()
-        activate Cliente
-        deactivate Cliente
         Reserva --> AprovarReservaController: confirmacao
         deactivate Reserva
+
+        AprovarReservaController -> Cliente : NotificaAprovacao()
+        activate Cliente
+        deactivate Cliente
 
         AprovarReservaController -> AprovarReservaGUI: mostrarMensagem("Reserva aprovada com sucesso")
     else recusada
         AprovarReservaController -> Reserva: AtualizarStatusRecusada()
         activate Reserva
-        Reserva -> Cliente : NotificaRecusa()
+        Reserva --> AprovarReservaController: confirmacao
+        deactivate Reserva
+
+        AprovarReservaController -> Cliente : NotificaRecusa()
         activate Cliente
         alt reserva paga
             activate Pagamento
             Pagamento -> Cliente : RealizaEstorno()
             deactivate Pagamento
-            deactivate Cliente
         end
-        Reserva --> AprovarReservaController: confirmacao
-        deactivate Reserva
+        deactivate Cliente
 
         AprovarReservaController -> AprovarReservaGUI: mostrarMensagem("Reserva recusada com sucesso")
     end
