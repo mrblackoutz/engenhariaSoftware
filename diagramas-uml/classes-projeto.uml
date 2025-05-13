@@ -1,6 +1,10 @@
 @startuml
 title Diagrama de Classes de Projeto - MesaFácil
 
+skinparam linetype ortho
+skinparam padding 0
+scale 0.8
+
 class Usuario {
     - id: int
     - email: string
