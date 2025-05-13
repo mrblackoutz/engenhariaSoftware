@@ -193,12 +193,37 @@ Restaurante "0..*" --> "1" Plano : contrata
 Restaurante "1..*" --> "1" Pagamento : paga
 Plano "*" --> "1" Pagamento: cobra
 Restaurante "1" --> "*" Relatorio : acessa
+Plano "*" --> "1..*" Relatorio : disponibiliza
 
 ControladorAfiliar --|> Controlador
-ControladorFazReserva  --|> Controlador
+ControladorAfiliar --> Clientes
+ControladorAfiliar --> Cliente
+
+ControladorFazReserva --|> Controlador
+ControladorFazReserva --> Reserva
+ControladorFazReserva --> BookingMesas
+
 ControladorCancelarReserva --|> Controlador
+ControladorCancelarReserva --> Reservas
+ControladorCancelarReserva --> Reserva
+ControladorCancelarReserva --> Pagamento
+
 ControladorContratarPlanos --|> Controlador
+ControladorContratarPlanos --> Planos
+ControladorContratarPlanos --> Pagamento
+ControladorContratarPlanos --> Restaurante
+
 ControladorDisponibilizarMesas  --|> Controlador
+ControladorDisponibilizarMesas  --> BookingMesas
+ControladorDisponibilizarMesas  --> Salao
+
 ControladorAprovarReserva --|> Controlador
+ControladorAprovarReserva --> Reservas
+ControladorAprovarReserva --> Reserva
+ControladorAprovarReserva --> Pagamento
+ControladorAprovarReserva --> Cliente
+
+RelatorioController --|> Controlador
+RelatorioController --> Relatorio
 
 @enduml
