@@ -1,48 +1,61 @@
 @startuml
 actor Cliente
-
 boundary CancelaReservaGUI <<boundary>>
-control ControladorCancelaReserva <<controller>>
-collections "reserva : Reserva" as reservas
+control ControladorCancelaReserva <<control>>
+collections "reservas : Reserva" as reservas
 participant Reserva
-participant Pagamento
 participant BookingMesas
 participant Restaurante
+participant Pagamento
 
-Cliente -> CancelaReservaGUI : cancelarReserva()
+' 1) Cliente inicia cancelamento
+Cliente -> CancelaReservaGUI : cancelarReserva(reservaId)
 activate CancelaReservaGUI
-CancelaReservaGUI -> ControladorCancelaReserva : cancelarReserva(reservaId)
+CancelaReservaGUI -> ControladorCancelaReserva : solicitarCancelamento(reservaId)
 activate ControladorCancelaReserva
 
+' 2) Controlador pede à coleção para buscar a instância
 ControladorCancelaReserva -> reservas : buscarReserva(reservaId)
 activate reservas
-reservas -> Reserva : BuscaInfoReserva()
+reservas -> Reserva : find(reservaId)
 activate Reserva
-Reserva --> reservas : Retorna Info
+Reserva --> reservas : retornaInstância
 deactivate Reserva
-reservas --> ControladorCancelaReserva : dadosReserva
+reservas --> ControladorCancelaReserva : retornaReserva
 deactivate reservas
 
 alt Reserva com pagamento
-    ControladorCancelaReserva -> Pagamento : verificarPagamento(reservaId)
+    ' 3) Se houver pagamento, processa estorno
+    ControladorCancelaReserva -> Pagamento : processarEstorno(reservaId)
     activate Pagamento
-    Pagamento -> Pagamento : processarEstorno()
+    Pagamento --> ControladorCancelaReserva : estornoConfirmado
+    deactivate Pagamento
 end
-deactivate Pagamento
 
-ControladorCancelaReserva -> Reserva : atualizarStatus("Cancelada")
+' 4) Controlador solicita cancelamento
+ControladorCancelaReserva -> reservas : solicitarCancelamento(reserva)
+activate reservas
+
+' 5) Reserva atualiza seu status e libera recursos
+reservas -> Reserva : cancelar()
 activate Reserva
 Reserva -> BookingMesas : liberarMesa(data, hora, mesa)
 activate BookingMesas
+BookingMesas --> Reserva : mesaLiberada
 deactivate BookingMesas
+
 Reserva -> Restaurante : notificarCancelamento(reservaId)
 activate Restaurante
+Restaurante --> Reserva : confirmaçãoRecebida
 deactivate Restaurante
-Reserva --> ControladorCancelaReserva : ConfirmaSucessoCancelamento
-deactivate Reserva
 
-ControladorCancelaReserva -> CancelaReservaGUI : confirmarCancelamento()
+Reserva --> reservas : cancelamentoConcluído
+deactivate Reserva
+reservas --> ControladorCancelaReserva : cancelamentoConfirmado
+deactivate reservas
+
+' 6) Controlador informa GUI
+ControladorCancelaReserva -> CancelaReservaGUI : exibirSucesso()
 deactivate ControladorCancelaReserva
 deactivate CancelaReservaGUI
-
 @enduml
