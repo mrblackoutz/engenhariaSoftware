@@ -1,75 +1,61 @@
 @startuml
-actor "Restaurante" as Restaurante
-
+actor Restaurante
 boundary AprovarReservaGUI <<boundary>>
-control AprovarReservaController <<controller>> 
-collections "reservas : Reserva" as ColecaoReservas
+control AprovarReservaController <<control>>
+collections "reservas : Reserva" as reservas
 participant Reserva
-participant Pagamento
 participant Cliente
+participant Pagamento
 
-== Aprovar Reserva ==
-
-Restaurante -> AprovarReservaGUI : AcessarTelaReservas()
+== Listar Reservas Pendentes ==
+Restaurante -> AprovarReservaGUI : acessarTelaReservas()
 activate AprovarReservaGUI
-AprovarReservaGUI -> AprovarReservaController : BuscarListaReservas()
+AprovarReservaGUI -> AprovarReservaController : listarReservasPendentes()
 activate AprovarReservaController
-AprovarReservaController -> ColecaoReservas : GetListaReservas()
-activate ColecaoReservas
-ColecaoReservas --> AprovarReservaController : RetornaLista
-deactivate ColecaoReservas
-AprovarReservaController -> AprovarReservaGUI : ExibirListaReservas()
+AprovarReservaController -> reservas : listarPendentes()
+activate reservas
+reservas --> AprovarReservaController : listaDeReservas
+deactivate reservas
+AprovarReservaController -> AprovarReservaGUI : exibirLista(listaDeReservas)
 deactivate AprovarReservaController
 deactivate AprovarReservaGUI
 
-Restaurante -> AprovarReservaGUI: RealizarAprovacao()
+== Aprovar ou Recusar Reserva ==
+Restaurante -> AprovarReservaGUI : selecionarReserva(idReserva, status)
 activate AprovarReservaGUI
-
-AprovarReservaGUI -> AprovarReservaController: RealizarAprovacao(reservaID, status)
+AprovarReservaGUI -> AprovarReservaController : submeterDecisao(idReserva, status)
 activate AprovarReservaController
 
-AprovarReservaController -> ColecaoReservas: buscar(reservaID)
-activate ColecaoReservas
-ColecaoReservas -> Reserva : BuscaInfoReserva()
+AprovarReservaController -> reservas : buscar(idReserva)
+activate reservas
+reservas -> Reserva : obterReserva()
 activate Reserva
-Reserva --> ColecaoReservas : Retorna Info
+Reserva --> reservas : reserva
 deactivate Reserva
-ColecaoReservas --> AprovarReservaController: dadosReserva (Reserva)
-deactivate ColecaoReservas
+deactivate reservas
 
-alt reserva válida
-    alt aprovada
-        AprovarReservaController -> Reserva: AtualizarStatusAprovado()
-        activate Reserva
-        Reserva --> AprovarReservaController: confirmacao
-        deactivate Reserva
-
-        AprovarReservaController -> Cliente : NotificaAprovacao()
-        activate Cliente
-        deactivate Cliente
-
-        AprovarReservaController -> AprovarReservaGUI: mostrarMensagem("Reserva aprovada com sucesso")
-    else recusada
-        AprovarReservaController -> Reserva: AtualizarStatusRecusada()
-        activate Reserva
-        Reserva --> AprovarReservaController: confirmacao
-        deactivate Reserva
-
-        AprovarReservaController -> Cliente : NotificaRecusa()
-        activate Cliente
-        alt reserva paga
-            activate Pagamento
-            Pagamento -> Cliente : RealizaEstorno()
-            deactivate Pagamento
-        end
-        deactivate Cliente
-
-        AprovarReservaController -> AprovarReservaGUI: mostrarMensagem("Reserva recusada com sucesso")
+alt status == "reservado"
+    Reserva -> Reserva : aprovar()
+    activate Reserva
+    Reserva -> Cliente : notificarAprovacao()
+    Reserva -> reservas : atualizarStatus(idReserva, "reservado")
+    deactivate Reserva
+else status == "recusado"
+    Reserva -> Reserva : recusar()
+    activate Reserva
+    Reserva -> Cliente : notificarRecusa()
+    alt houvePagamento
+        Reserva -> Pagamento : processarEstorno()
+        activate Pagamento
+        Pagamento --> Reserva : estornoConfirmado
+        deactivate Pagamento
     end
-else inválida ou não existe
-    AprovarReservaController -> AprovarReservaGUI: mostrarMensagem("Erro: reserva não encontrada ou inválida")
+    Reserva -> reservas : atualizarStatus(idReserva, "recusado")
+    deactivate Reserva
 end
 
+Reserva --> AprovarReservaController : resultadoDecisao(mensagem)
+AprovarReservaController -> AprovarReservaGUI : mostrarResultado(mensagem)
 deactivate AprovarReservaController
 deactivate AprovarReservaGUI
 @enduml
