@@ -3,47 +3,35 @@ actor Cliente
 boundary AfiliarGUI <<boundary>>
 control ControladorAfiliar <<control>>
 participant "Cliente" as cliente
-collections "cliente : Cliente" as clientes
- 
-Cliente -> AfiliarGUI : FazLogin()
+collections "clientes : Cliente" as clientes
+
+Cliente -> AfiliarGUI : PreencheDadosAfiliação()
 activate AfiliarGUI
-AfiliarGUI -> ControladorAfiliar : SolicitaLogin(email,senha)
+AfiliarGUI -> ControladorAfiliar : SolicitarAfiliação(dados)
 activate ControladorAfiliar
-ControladorAfiliar -> clientes : GetCliente(email,senha)
+
+ControladorAfiliar -> clientes : solicitarNovaAfiliação(dados)
 activate clientes
-clientes --> ControladorAfiliar : Retorna Dados
+
+clientes -> cliente : create(dados)
+activate cliente
+cliente --> clientes : retorna novo cliente
+deactivate cliente
 deactivate clientes
 
-alt Cliente Existente
-    ControladorAfiliar -> ControladorAfiliar : EfetuaLogin()
-    activate ControladorAfiliar
-    deactivate ControladorAfiliar
-    ControladorAfiliar -> AfiliarGUI : MostraSucessoLogin()
-    
-else Não Existente
-    
-    ControladorAfiliar -> AfiliarGUI : SolicitarCadastro()
-    Cliente -> AfiliarGUI : FazCadastro()
-    AfiliarGUI -> ControladorAfiliar : FazerNovoCadastro(email,senha,nome)
-    ControladorAfiliar -> cliente : create Cliente(email,senha,nome)
-    activate cliente
-    alt Cadastro Válido
-        cliente -> clientes : adicionarNovoCliente(cliente)
-        activate clientes
-        clientes --> cliente : cliente adicionado
-        deactivate clientes
-        cliente --> ControladorAfiliar : Retorna Sucesso
-        ControladorAfiliar -> AfiliarGUI : ExibirSucessoCadastro()
-    else Cadastro Inválido
-        cliente --> ControladorAfiliar : Retorna Erro
-        deactivate cliente
-        ControladorAfiliar -> AfiliarGUI : ExibirErroCadastro()
-    end
-    
-end
+ControladorAfiliar -> AfiliarGUI : ExibirTermosDeUso()
+AfiliarGUI -> Cliente : ExibeTermos()
+
+Cliente -> AfiliarGUI : AceitaTermos()
+AfiliarGUI -> ControladorAfiliar : RegistrarAceite()
+
+ControladorAfiliar -> clientes : registrarAceite(cliente)
+activate clientes
+clientes -> clientes : adicionarNovoCliente(cliente)
+deactivate clientes
+
+ControladorAfiliar -> AfiliarGUI : ExibirSucessoAfiliação()
 
 deactivate ControladorAfiliar
 deactivate AfiliarGUI
-
-
 @enduml
