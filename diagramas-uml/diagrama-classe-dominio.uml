@@ -1,0 +1,79 @@
+@startuml
+title Diagrama de Classes de Domínio - MesaFácil
+
+class Cliente {
+  - id
+  - cpf
+  - nome
+  - email
+  - telefone
+  - senha
+  - preferencias
+}
+
+class Reserva {
+  - id
+  - dataHora
+  - quantidadePessoas
+  - status
+  - valorPago
+}
+
+class Avaliacao {
+  - id
+  - nota
+  - comentario
+  - dataHora
+}
+
+class Restaurante {
+  - cnpj
+  - razaoSocial
+  - nomeFantasia
+  - endereco
+  - horarioFuncionamento
+  - tempoConfirmacao
+  - fotosDoRestaurante
+  - cardapio
+  - avaliacaoMedia
+}
+
+class Pagamento {
+  - id
+  - valor
+  - status
+  - dataHora
+}
+
+class Salao {
+  - id
+  - nomeLocal
+  - tipoLocal
+  - caracteristicas
+}
+
+class Mesa {
+  - id
+  - numero
+  - capacidade
+  - status
+}
+
+class BookingMesas {
+  - lista_mesas
+}
+
+' Relacionamentos
+
+Cliente "1" --> "0..*" Reserva : realiza
+Reserva "0..*" --> "1" Cliente
+Reserva "0..1" --> "1" Avaliacao : gera
+Avaliacao "1" --> "1" Restaurante : avalia
+Reserva "0..*" --> "1" Restaurante : gerencia
+Reserva "0..*" --> "0..*" Pagamento : paga
+Restaurante "1" --> "1..*" Salao : possui
+Salao "1" --> "1..*" Mesa : possui
+Mesa "1" --> "1" BookingMesas : disponibiliza
+Reserva "1" --> "1" BookingMesas : associa
+
+@enduml
