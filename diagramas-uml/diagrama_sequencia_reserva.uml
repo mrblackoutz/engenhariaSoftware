@@ -2,43 +2,62 @@
 actor Cliente
 boundary FazReservaGUI <<boundary>>
 control ControladorFazReserva <<control>>
+collections "BookingMesas" as bookingMesas
+participant Mesa
 participant Reserva
-participant BookingMesas
 participant Pagamento
 
+' 1) Consulta de disponibilidade
 Cliente -> FazReservaGUI : SelecionarReserva()
 activate FazReservaGUI
-FazReservaGUI -> ControladorFazReserva : Solicitar disponibilidade(restaurante, data, horario)
+FazReservaGUI -> ControladorFazReserva : solicitarDisponibilidade(restaurante, data, horário)
 activate ControladorFazReserva
-ControladorFazReserva -> BookingMesas : ConsultarMesasDisponiveis(restaurante, data, horario)
-activate BookingMesas
-BookingMesas --> ControladorFazReserva : Retorna disponibilidade
-deactivate BookingMesas
-ControladorFazReserva --> FazReservaGUI : Mostra disponibilidade
+
+ControladorFazReserva -> bookingMesas : consultarMesasDisponiveis(restaurante, data, horário)
+activate bookingMesas
+bookingMesas -> Mesa : listarDisponíveis(restaurante, data, horário)
+activate Mesa
+Mesa --> bookingMesas : mesasDisponíveis
+deactivate Mesa
+bookingMesas --> ControladorFazReserva : retornaDisponibilidade
+deactivate bookingMesas
+ControladorFazReserva --> FazReservaGUI : mostraDisponibilidade()
 deactivate ControladorFazReserva
 deactivate FazReservaGUI
 
-Cliente -> FazReservaGUI : ConfirmaReserva()
+' 2) Confirmação da reserva (com eventual pagamento)
+Cliente -> FazReservaGUI : confirmarReserva(mesaEscolhida)
 activate FazReservaGUI
-FazReservaGUI -> ControladorFazReserva : EnviaDadosReserva(restaurante, data, horario, mesa)
+FazReservaGUI -> ControladorFazReserva : enviarDadosReserva(restaurante, data, horário, mesa)
 activate ControladorFazReserva
 
-alt Pagamento Necessário
-    ControladorFazReserva -> Pagamento : ProcessaPagamento()
+alt pagamento necessário
+    ControladorFazReserva -> Pagamento : processarPagamento(dadosCartão)
     activate Pagamento
-    Pagamento --> ControladorFazReserva : Pagamento confirmado
+    Pagamento --> ControladorFazReserva : pagamentoConfirmado
     deactivate Pagamento
 end
 
-ControladorFazReserva -> Reserva : CriarReserva(restaurante, data, horario, mesa)
+' 3) BookingMesas cria a Reserva
+ControladorFazReserva -> bookingMesas : solicitarCriaçãoReserva(dadosReserva, cliente)
+activate bookingMesas
+
+bookingMesas -> Reserva : create(dadosReserva, cliente)
 activate Reserva
-Reserva -> BookingMesas : AtualizarBooking()
-activate BookingMesas
-BookingMesas --> Reserva : Confirma Atualizacao
-deactivate BookingMesas
-Reserva --> ControladorFazReserva : Confirma criação
+
+Reserva -> Mesa : reservarMesa(mesa)
+activate Mesa
+Mesa --> Reserva : confirmaçãoMesa
+deactivate Mesa
+
+Reserva --> bookingMesas : retornaReserva
 deactivate Reserva
-ControladorFazReserva --> FazReservaGUI : Exibir confirmação
+
+bookingMesas --> ControladorFazReserva : retornaReserva
+deactivate bookingMesas
+
+' 4) Exibição de confirmação
+ControladorFazReserva -> FazReservaGUI : exibirConfirmação(reserva)
 deactivate ControladorFazReserva
 deactivate FazReservaGUI
 @enduml
