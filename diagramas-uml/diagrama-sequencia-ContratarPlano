@@ -1,51 +1,56 @@
 @startuml
-actor "Restaurante" as Restaurante
+actor Restaurante
+boundary PlanoUI <<boundary>>
+control PlanoController <<control>>
+collections "planos : Plano" as planos
+participant Plano
+participant Pagamento
 
-boundary PlanoUI
-control PlanoController
-entity Plano
-
-== Contratar Plano ==
-
-Restaurante -> PlanoUI: selecionarPlano(planoID)
+== Seleção do Plano ==
+Restaurante -> PlanoUI : selecionarPlano(planoID)
 activate PlanoUI
-
-PlanoUI -> PlanoController: selecionarPlano(planoID)
+PlanoUI -> PlanoController : solicitarDetalhesPlano(planoID)
 activate PlanoController
 
-PlanoController -> Plano: validarPlano(planoID)
+PlanoController -> planos : obterDetalhesPlano(planoID)
+activate planos
+planos -> Plano : getDetalhes(planoID)
 activate Plano
-Plano --> PlanoController: detalhesPlano(preço, termos)
+Plano --> planos : detalhes(preço, termos)
 deactivate Plano
+planos --> PlanoController : retornaDetalhes(preço, termos)
+deactivate planos
 
-PlanoController -> PlanoUI: exibirDetalhesPlano(preço, termos)
+PlanoController -> PlanoUI : exibirDetalhesPlano(preço, termos)
 deactivate PlanoController
-
-PlanoUI -> Restaurante: mostrarDetalhesPlano()
-activate Restaurante
-deactivate Restaurante
+PlanoUI -> Restaurante : mostrarDetalhesPlano()
 deactivate PlanoUI
 
-Restaurante -> PlanoUI: confirmarContratacao(dadosPagamento)
+== Confirmação e Pagamento ==
+Restaurante -> PlanoUI : confirmarContratacao(dadosPagamento)
 activate PlanoUI
-
-PlanoUI -> PlanoController: confirmarContratacao(dadosPagamento)
+PlanoUI -> PlanoController : processarContratacao(planoID, restauranteID, dadosPagamento)
 activate PlanoController
 
-PlanoController -> Plano: processarPagamento(dadosPagamento)
-activate Plano
-Plano --> PlanoController: resultadoPagamento(sucesso/falha)
-deactivate Plano
+PlanoController -> Pagamento : processarPagamento(dadosPagamento)
+activate Pagamento
+Pagamento --> PlanoController : resultadoPagamento(sucesso/falha)
+deactivate Pagamento
 
-alt pagamento bem‑sucedido
-    PlanoController -> Plano: ativarPlano(planoID, restauranteID)
+alt sucesso
+    ' Após pagamento, delega à coleção a solicitação de criação da assinatura
+    PlanoController -> planos : solicitaCriacaoAssinatura(planoID, restauranteID)
+    activate planos
+    planos -> Plano : createAssinatura(planoID, restauranteID)
     activate Plano
-    Plano --> PlanoController: confirmacaoAtivacao
+    Plano --> planos : assinaturaCriada
     deactivate Plano
+    planos --> PlanoController : confirmacaoAssinatura
+    deactivate planos
 
-    PlanoController -> PlanoUI: mostrarMensagem("Plano contratado com sucesso")
-else pagamento recusado
-    PlanoController -> PlanoUI: mostrarMensagem("Pagamento recusado, tente novamente")
+    PlanoController -> PlanoUI : mostrarMensagem("Plano contratado com sucesso")
+else falha
+    PlanoController -> PlanoUI : mostrarMensagem("Pagamento recusado, tente novamente")
 end
 
 deactivate PlanoController
