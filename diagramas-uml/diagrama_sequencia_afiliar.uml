@@ -29,17 +29,32 @@ alt ehValido
     TermosDeUso --> ControladorAfiliar : retorna termos
     ControladorAfiliar -> AfiliarGUI : ExibirTermosDeUso()
 
-    Cliente -> AfiliarGUI : AceitaTermos()
-    AfiliarGUI -> ControladorAfiliar : RegistrarAceite()
+    alt Cliente aceita os termos
+        Cliente -> AfiliarGUI : AceitaTermos()
+        AfiliarGUI -> ControladorAfiliar : RegistrarAceite()
 
-    ControladorAfiliar -> clientes : registrarAceite(cliente) 
-    activate clientes
-    clientes -> clientes : adicionarNovoCliente(cliente)
-    deactivate clientes
+        ControladorAfiliar -> cliente : registrarAceite()
+        activate cliente
+        cliente --> ControladorAfiliar : confirmação
+        deactivate cliente
 
-    ControladorAfiliar -> AfiliarGUI : ExibirSucessoAfiliação()
+        ControladorAfiliar -> AfiliarGUI : ExibirSucessoAfiliação()
+
+    else Cliente recusa os termos
+        Cliente -> AfiliarGUI : RecusaTermos()
+        AfiliarGUI -> ControladorAfiliar : CancelarAfiliação()
+
+        ControladorAfiliar -> clientes : solicitarExclusao(cliente)
+        activate clientes
+        clientes -> cliente : excluir()
+        cliente --> clientes : confirmação
+        deactivate clientes
+
+        ControladorAfiliar -> AfiliarGUI : ExibirCancelamento()
+    end
 
 else
+    ControladorAfiliar -> AfiliarGUI : ExibirErroValidacao()
 end
 
 deactivate ControladorAfiliar
