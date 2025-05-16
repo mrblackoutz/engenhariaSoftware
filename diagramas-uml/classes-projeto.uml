@@ -1,233 +1,213 @@
 @startuml
-title Diagrama de Classes de Projeto - MesaFácil
+skinparam classAttributeIconSize 0
 
-skinparam linetype ortho
-skinparam padding 0
-scale 0.8
+' ===== Agrupamentos por contexto =====
+package "Domínio de Usuário" {
+    class Usuario {
+        - id: int
+        - email: string
+        - login: string
+        - senha: string
+        - telefone: string
+        + validarLogin(login: string, senha: string): boolean
+        + enviarEmail(m: Endereco, titulo: string, corpo: string): void
+        + enviarSMS(m: Endereco, texto: string): void
+    }
 
-class Usuario {
-    - id: int
-    - email: string
-    - login: string
-    - senha: string
-    - telefone: string
-    + validarLogin(login: string, senha: string): boolean
-    + enviarEmail(remetente: string, tituloMsg: string, corpoMsg: string): void
-    + enviarSMS(remetente: string, textoMsg: string): void
+    class Cliente {
+        - cpf: string
+        - preferencias: string
+        - nome: string
+        - roles: string
+        + registrarReserva(reserva: Reserva): void
+        + avaliarReserva(reserva: Reserva, nota: int, comentario: string): void
+    }
+
+    class StaffRestaurante {
+        - nome: string
+        - perfilDeAcesso: List<string>
+        + validarAcesso(pagina: string): boolean
+        + aprovarReserva(reserva: Reserva): void
+    }
+
+    Usuario <|-- Cliente
+    Usuario <|-- StaffRestaurante
 }
 
-class Cliente {
-    - cpf: string
-    - preferencias: string
-    - nome: string
-    + registrarReserva(reserva: Reserva): void
-    + avaliarReserva(reserva: Reserva, nota: int, comentario: string): void
+package "Controle de Usuário" {
+    class ControladorAfiliar {
+        + obterCliente(email: string, senha: string): Cliente
+        + efetuarLogin(): boolean
+    }
+
+    class Clientes {
+        + listaClientes(): List<Cliente>
+        + buscarCliente(cliente: Cliente): Cliente
+        + adicionarCliente(cliente: Cliente): void
+    }
+
+    ControladorAfiliar --> Clientes
 }
 
-class Clientes {
-    - ListaClientes: Cliente
-    + buscaCliente(cliente_buscado: Cliente)
-    + adicionarNovoCliente(cliente: Cliente)
+package "Reserva" {
+    class Reserva {
+        - id: int
+        - dataHora: datetime
+        - quantidadePessoas: int
+        - status: string
+        - valorPago: double
+        - mesaReservada: Mesa
+        - donoReserva: Cliente
+        + confirmar(): void
+        + cancelar(): void
+        + atualizarStatus(novoStatus: string): boolean
+        + buscarInformacoes(): Reserva
+    }
+
+    class Avaliacao {
+        - id: int
+        - nota: int
+        - comentario: string
+        - dataHora: datetime
+        + gravar(): void
+    }
+
+    class Reservas {
+        - reservasAprovadas: List<Reserva>
+        + buscarReserva(id: int): Reserva
+    }
+
+    class ControladorFazReserva {
+        + consultarMesas(restaurante: Restaurante, data: datetime, horario: datetime): List<Mesa>
+        + processarPagamento(): boolean
+        + criarReserva(restaurante: Restaurante, data: datetime, mesa: Mesa): Reserva
+    }
+
+    class ControladorCancelarReserva {
+        + buscarReserva(id: int): Reserva
+        + verificarPagamento(reserva: Reserva): boolean
+    }
+
+    class ControladorAprovarReserva {
+        + buscar(id: int): Reserva
+        + recusar(reserva: Reserva): boolean
+    }
+
+    ControladorFazReserva --> Reserva
+    ControladorFazReserva --> Mesa
+    ControladorCancelarReserva --> Reserva
+    ControladorAprovarReserva --> Reserva
+    Cliente --> Reserva
+    Cliente --> Avaliacao
+    Reserva --> Avaliacao
+    Reservas --> Reserva
 }
 
-class StaffRestaurante {
-    - nome: string
-    - perfilDeAcesso: List<string>
-    + validarAcessoJornada(paginaAcessada: string): boolean
-    + aprovarReserva(reserva: Reserva): void
+package "Pagamento" {
+    class Pagamento {
+        - id: int
+        - valor: double
+        - status: string
+        - dataHora: datetime
+        + processar(): boolean
+        + consultarStatus(): string
+        + estornar(): boolean
+    }
+
+    Reserva --> Pagamento : "0..1"
+    Pagamento --> Reserva : "1"
 }
 
-class Restaurante {
-    - cnpj: string
-    - razaoSocial: string
-    - nomeFantasia: string
-    - endereco: string
-    - horarioFuncionamento: string
-    - tempoConfirmacao: int
-    - fotosDoRestaurante: string
-    - cardapio: string
-    - avaliacaoMedia: float
-    + disponibilizarMesas(listaSalas: List<Salao>): void
-    + atualizarAvaliacaoMedia(novaAvaliacao: float): void
-    + notificarCancelamento(reservaID: Reserva) : void
+package "Infraestrutura" {
+    class Controlador {
+        - usuarioLogado: Usuario
+        - horario: datetime
+        - dispositivo: string
+    }
+
+    class BookingMesas {
+        - salas: List<Sala>
+        + disponibilizarSala(sala: Sala): void
+        + listarMesasDisponiveis(dataHora: datetime): List<Mesa>
+        + atualizarDisponibilidade(): boolean
+    }
+
+    class Sala {
+        - id: int
+        - nome: string
+        - tipo: string
+        - caracteristicas: string
+        + adicionarMesas(mesas: Mesa): void
+        + listarMesas(): List<Mesa>
+    }
+
+    class Mesa {
+        - id: int
+        - numero: int
+        - capacidade: int
+        - status: string
+        + reservar(data: datetime, duracao: float): void
+        + liberar(data: datetime, hora: time): void
+    }
+
+    BookingMesas --> Sala
+    Sala --> Mesa
+    Reserva --> Mesa
+    Controlador --> Reserva : gerencia
+    Controlador --> Usuario : éControladoPor
 }
 
-class BookingMesas {
-    - lista_salao: List<Salao>
-    + disponibilizarSalao(salao: Salao): void
-    + listarMesasDisponiveis(dataHora: datetime): List<Mesa>
-    + atualizarBooking(): boolean
+package "Restaurante & Plano" {
+    class Restaurante {
+        - cnpj: string
+        - razaoSocial: string
+        - endereco: string
+        - horarioFuncionamento: string
+        - tipoCozinha: string
+        - descricao: string
+        - plano: Plano
+        - notaMedia: float
+        + disponibilizarMesas(salas: List<Sala>): void
+        + avaliarAvaliacoes(notaValoracao: float): void
+        + notificarCancelamento(reserva: Reserva): void
+    }
+
+    class Plano {
+        - id: int
+        - nome: string
+        - preco: float
+        - disponivel: boolean
+    }
+
+    class ControladorContratarPlanos {
+        + associarPlano(plano: Plano, restaurante: Restaurante): boolean
+    }
+
+    class Planos {
+        + lista(): List<Plano>
+        + getDisponiveis(): List<Plano>
+    }
+
+    Restaurante --> Plano : "1..*"
+    ControladorContratarPlanos --> Restaurante
+    ControladorContratarPlanos --> Plano
+    ControladorContratarPlanos --> Planos
 }
 
-class Salao {
-    - id: int
-    - nomeLocal: string
-    - tipoLocal: string
-    - caracteristicas: string
-    + adicionarMesa(mesa: Mesa): void
-    + listarMesas(): List<Mesa>
+package "Relatórios" {
+    class Relatorio {
+        - id: int
+        - tipo: string
+        - dataInicio: datetime
+        - dataFim: datetime
+        - restaurante: Restaurante
+    }
+
+    class RelatorioController {
+        + gerar(tipo: TipoRelatorio, periodo: datetime): Relatorio
+    }
+
+    RelatorioController --> Relatorio
+    Relatorio --> Restaurante
 }
-
-class Mesa {
-    - id: int
-    - numero: int
-    - capacidade: int
-    - status: string
-    + reservarMesa(horaroio: datetime, duracao: float): void
-    + liberarMesa(data: datetime, hora: time, mesa: Mesa): void
-}
-
-class Reserva {
-    - id: int
-    - dataHora: datetime
-    - quantidadePessoas: int
-    - status: string
-    - valorPago: double
-    - mesaReservada: mesa
-    - donoReserva: Cliente
-    + confirmarReserva(): void
-    + visualizarReserva(): void
-    + cancelarReserva(): void
-    + atualizarStatus(novo_status: string) : boolean
-    + buscarInfoReserva() : Reserva
-}
-
-class Reservas {
-    - ReservasAprovadas: List <Reserva>
-    + buscarReserva(reservaID: int) : Reserva
-}
-
-class Avaliacao {
-    - id: int
-    - nota: int
-    - comentario: string
-    - dataHora: datetime
-    + gravarAvaliacao(): void
-}
-
-class Pagamento {
-    - id: int
-    - valor: double
-    - status: string
-    - dataHora: datetime
-    + processarPagamento(): boolean
-    + consultarStatus(): string
-    + processarEstorno(): boolean
-}
-
-class Plano {
-    - id: int
-    - nome_comercial : string
-    - preco : float
-    - disponivel_comercializacao: float
-}
-
-class Planos {
-    - ListaPlanos : List <Planos>
-    + getPlanosDisponiveis() : List <Plano>
-}
-
-class Controlador {
-    - usuario_logado : Usuario
-    - horario : datetime
-    - dispositivo_acessado: string
-}
-
-class ControladorAfiliar {
-    + GetCliente(email : string, senha : string) : Cliente
-    + EfetuaLogin() : boolean
-}
-
-class ControladorFazReserva {
-    + ConsultarMesasDisponiveis(restaurante: Restaurante, data: datetime, horario: datetime) : List <Mesas>
-    + ProcessaPagamento() : boolean
-    + CriarReserva(restaurante: Restaurante, data: datetime, mesa: Mesa) : Reserva
-}
-
-class ControladorCancelarReserva {
-    + buscarReserva(reservaId: int) : Reserva
-    + verificarPagamento(reserva: Reserva) : boolean
-}
-
-class ControladorContratarPlanos {
-    + associarPlano(plano: Plano, restaurante: Restaurante) : boolean
-}
-
-class ControladorDisponibilizarMesas {
-    + criarOuAtualizarDisponibilidade(data: datetime, horario: datetime) : boolean
-    + ativarSalao(salaoID: int) : Salao
-}
-
-class ControladorAprovarReserva {
-    + buscar(reservaID: int) : Reserva
-    + atualizarStatusRecusada() : boolean
-}
-
-class RelatorioController {
-    + gerar(tipo: TipoRelatorio, periodo: datetime) : Relatorio
-}
-
-class Relatorio {
-    - id: int
-    - data_inicio: datetime
-    - data_final: datetime
-    - planos: List <Plano>
-    - restaurante: Restaurante
-}
-
-' ==== Relacionamentos ====
-
-Usuario <|-- Cliente
-Clientes "1" --> "1..*" Cliente
-Usuario <|-- StaffRestaurante
-StaffRestaurante "1..*" --> "0..*" Reserva: aprova
-Reservas "1" --> "0..*" Reserva
-Reserva "1" --> "1" Mesa : reserva
-Restaurante "1" --> "0..*" Reserva : gerencia
-Restaurante "1" --> "1" BookingMesas : possui
-Avaliacao "1" --> "1" Restaurante : avalia
-BookingMesas "1" --> "1..*" Salao : disponibiliza
-Salao "1" --> "1..*" Mesa : possui
-Reserva "0..1" --> "1" Avaliacao : gera
-Reserva "1" --> "1" Pagamento : registra
-Cliente "1" --> "0..*" Reserva : realiza
-Cliente "1" --> "0..*" Pagamento: paga
-Planos "1" --> "1..*" Plano
-Restaurante "0..*" --> "1" Plano : contrata
-Restaurante "1..*" --> "1" Pagamento : paga
-Plano "*" --> "1" Pagamento: cobra
-Restaurante "1" --> "*" Relatorio : acessa
-Plano "*" --> "1..*" Relatorio : disponibiliza
-
-ControladorAfiliar --|> Controlador
-ControladorAfiliar --> Clientes
-ControladorAfiliar --> Cliente
-
-ControladorFazReserva --|> Controlador
-ControladorFazReserva --> Reserva
-ControladorFazReserva --> BookingMesas
-
-ControladorCancelarReserva --|> Controlador
-ControladorCancelarReserva --> Reservas
-ControladorCancelarReserva --> Reserva
-ControladorCancelarReserva --> Pagamento
-
-ControladorContratarPlanos --|> Controlador
-ControladorContratarPlanos --> Planos
-ControladorContratarPlanos --> Pagamento
-ControladorContratarPlanos --> Restaurante
-
-ControladorDisponibilizarMesas  --|> Controlador
-ControladorDisponibilizarMesas  --> BookingMesas
-ControladorDisponibilizarMesas  --> Salao
-
-ControladorAprovarReserva --|> Controlador
-ControladorAprovarReserva --> Reservas
-ControladorAprovarReserva --> Reserva
-ControladorAprovarReserva --> Pagamento
-ControladorAprovarReserva --> Cliente
-
-RelatorioController --|> Controlador
-RelatorioController --> Relatorio
-
 @enduml
