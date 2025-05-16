@@ -1,36 +1,46 @@
 @startuml
 actor Cliente
 boundary AfiliarGUI <<boundary>>
-control ControladorAfiliar <<control>>
-participant "Cliente" as cliente
+control ControladorAfiliar <<controller>>
 collections "clientes : Cliente" as clientes
+participant "Cliente" as cliente
+participant TermosDeUso
 
-Cliente -> AfiliarGUI : PreencheDadosAfiliação()
+Cliente -> AfiliarGUI : InformaDadosPessoais()
 activate AfiliarGUI
-AfiliarGUI -> ControladorAfiliar : SolicitarAfiliação(dados)
+AfiliarGUI -> ControladorAfiliar : SolicitarAfiliação(CPF, Nome, email)
 activate ControladorAfiliar
 
-ControladorAfiliar -> clientes : solicitarNovaAfiliação(dados)
-activate clientes
+ControladorAfiliar -> clientes : verificaSeValido(CPF, Nome, email)
 
-clientes -> cliente : create(dados)
-activate cliente
-cliente --> clientes : retorna novo cliente
-deactivate cliente
-deactivate clientes
+alt ehValido
+    ControladorAfiliar -> AfiliarGUI : PedirVerificacaoEmail()
+    
+    ControladorAfiliar -> clientes : solicitarNovaAfiliação(CPF, Nome, email)
+    activate clientes
 
-ControladorAfiliar -> AfiliarGUI : ExibirTermosDeUso()
-AfiliarGUI -> Cliente : ExibeTermos()
+    clientes -> cliente : createNewCliente(CPF, Nome, email)
+    activate cliente
+    cliente --> clientes : retorna novo cliente
+    deactivate cliente
+    deactivate clientes
 
-Cliente -> AfiliarGUI : AceitaTermos()
-AfiliarGUI -> ControladorAfiliar : RegistrarAceite()
+    ControladorAfiliar -> TermosDeUso : SolicitarTermos()
+    TermosDeUso --> ControladorAfiliar : retorna termos
+    ControladorAfiliar -> AfiliarGUI : ExibirTermosDeUso()
 
-ControladorAfiliar -> clientes : registrarAceite(cliente)
-activate clientes
-clientes -> clientes : adicionarNovoCliente(cliente)
-deactivate clientes
+    Cliente -> AfiliarGUI : AceitaTermos()
+    AfiliarGUI -> ControladorAfiliar : RegistrarAceite()
 
-ControladorAfiliar -> AfiliarGUI : ExibirSucessoAfiliação()
+    ControladorAfiliar -> clientes : registrarAceite(cliente) 
+    activate clientes
+    clientes -> clientes : adicionarNovoCliente(cliente)
+    deactivate clientes
+
+    ControladorAfiliar -> AfiliarGUI : ExibirSucessoAfiliação()
+
+else
+end
 
 deactivate ControladorAfiliar
 deactivate AfiliarGUI
