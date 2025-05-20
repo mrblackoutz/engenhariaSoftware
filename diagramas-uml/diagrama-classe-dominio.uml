@@ -1,79 +1,284 @@
 @startuml
-title Diagrama de Classes de Domínio - MesaFácil
+skinparam linetype ortho
+skinparam ArrowColor DarkSlateGray
+skinparam ArrowThickness 1
+skinparam roundCorner 5
+skinparam classAttributeIconSize 0
+skinparam classFontSize 14
+skinparam classFontStyle bold
+skinparam classBackgroundColor White
+skinparam classStereotypeFontSize 12
+skinparam packageBackgroundColor WhiteSmoke
+hide circle
 
-class Cliente {
-  - id
-  - cpf
-  - nome
-  - email
-  - telefone
-  - senha
-  - preferencias
-}
+  class Usuario {
+    -id
+    -nome
+    -email
+    -telefone
+    -senha
+    -statusConta
+    -dataRegistro
+  }
 
-class Reserva {
-  - id
-  - dataHora
-  - quantidadePessoas
-  - status
-  - valorPago
-}
+  class StatusConta {
+    ATIVO
+    INATIVO
+    PENDENTE
+    BLOQUEADO
+  }
 
-class Avaliacao {
-  - id
-  - nota
-  - comentario
-  - dataHora
-}
+  class Cliente {
+    -cpf
+    -dataNascimento
+    -preferencias
+    -notificacoesAtivas
+  }
 
-class Restaurante {
-  - cnpj
-  - razaoSocial
-  - nomeFantasia
-  - endereco
-  - horarioFuncionamento
-  - tempoConfirmacao
-  - fotosDoRestaurante
-  - cardapio
-  - avaliacaoMedia
-}
+  class DispositivoMobile {
+    -id
+    -tokenPush
+    -plataforma
+    -ultimoAcesso
+  }
 
-class Pagamento {
-  - id
-  - valor
-  - status
-  - dataHora
-}
+  class Restaurante {
+    -cnpj
+    -razaoSocial
+    -taxaReserva
+    -tempoMaximoEspera
+    -politicaCancelamento
+    -avaliacao
+  }
 
-class Salao {
-  - id
-  - nomeLocal
-  - tipoLocal
-  - caracteristicas
-}
+  class Endereco {
+    -rua
+    -numero
+    -complemento
+    -bairro
+    -cidade
+    -estado
+    -cep
+    -latitude
+    -longitude
+  }
 
-class Mesa {
-  - id
-  - numero
-  - capacidade
-  - status
-}
+  class HorarioFuncionamento {
+    -diasSemana
+    -feriadosEspeciais
+  }
 
-class BookingMesas {
-  - lista_mesas
-}
+  class Categoria {
+    -id
+    -nome
+    -descricao
+  }
 
-' Relacionamentos
+  class Booking {
+    -id
+    -dataHora
+    -status
+    -codigo
+    -qrCode
+    -valorPago
+    -observacoes
+    -quantidadePessoas
+    -lembreteEnviado
+  }
 
-Cliente "1" --> "0..*" Reserva : realiza
-Reserva "0..*" --> "1" Cliente
-Reserva "0..1" --> "1" Avaliacao : gera
-Avaliacao "1" --> "1" Restaurante : avalia
-Reserva "0..*" --> "1" Restaurante : gerencia
-Reserva "0..*" --> "0..*" Pagamento : paga
-Restaurante "1" --> "1..*" Salao : possui
-Salao "1" --> "1..*" Mesa : possui
-Mesa "1" --> "1" BookingMesas : disponibiliza
-Reserva "1" --> "1" BookingMesas : associa
+  class StatusBooking {
+    SOLICITADO
+    CONFIRMADO
+    CANCELADO
+    CONCLUIDO
+    NO_SHOW
+    EM_ANDAMENTO
+  }
 
+  class Mesa {
+    -id
+    -numero
+    -capacidade
+    -status
+    -localizacao
+    -tipo
+  }
+
+  class StatusMesa {
+    DISPONIVEL
+    RESERVADA
+    OCUPADA
+    INDISPONIVEL
+    MANUTENCAO
+  }
+
+  class TipoMesa {
+    INTERNA
+    EXTERNA
+    PRIVATIVA
+    BALCAO
+    VIP
+  }
+
+  class BookingMesa {
+    -dataHoraInicio
+    -dataHoraFim
+  }
+  
+  class TermoUso {
+    -id
+    -versao
+    -texto
+    -dataPublicacao
+    -tipoTermo
+    -obrigatorio
+    -status
+  }
+  
+  class TipoTermo {
+    POLITICA_PRIVACIDADE
+    TERMOS_SERVICO
+    POLITICA_CANCELAMENTO
+    TERMOS_PAGAMENTO
+  }
+  
+  class StatusTermo {
+    ATIVO
+    DESATUALIZADO
+    REVOGADO
+  }
+  
+  class TermoAceito {
+    -dataAceitacao
+    -versaoAceita
+    -ipAceitacao
+    -dispositivoAceitacao
+  }
+
+
+  class Notificacao {
+    -id
+    -titulo
+    -mensagem
+    -dataEnvio
+    -dataLeitura
+    -tipo
+    -status
+    -dadosAdicionais
+  }
+  
+  class TipoNotificacao {
+    CONFIRMACAO_BOOKING
+    LEMBRETE_BOOKING
+    CANCELAMENTO
+    ALTERACAO_BOOKING
+    SOLICITACAO_AVALIACAO
+    PROMOCAO
+  }
+  
+  class StatusNotificacao {
+    PENDENTE
+    ENVIADA
+    LIDA
+    FALHA
+  }
+  
+  class LembreteBooking {
+    -antecedencia
+    -tipoLembrete
+  }
+  
+  class TipoLembrete {
+    PUSH
+    EMAIL
+    SMS
+  }
+
+  class Pagamento {
+    -id
+    -valor
+    -status
+    -dataHora
+    -referencia
+  }
+
+  class StatusPagamento {
+    PENDENTE
+    PROCESSANDO
+    APROVADO
+    REJEITADO
+    ESTORNADO
+    EXPIRADO
+  }
+
+  class TipoPagamento {
+    CARTAO_CREDITO
+    CARTAO_DEBITO
+    PIX
+    DINHEIRO
+    VOUCHER
+    OUTROS
+  }
+
+  class Avaliacao {
+    -id
+    -nota
+    -comentario
+    -dataHora
+    -status
+    -respostaRestaurante
+  }
+  
+  class StatusAvaliacao {
+    PENDENTE
+    PUBLICADA
+    REMOVIDA
+    COM_RESPOSTA
+  }
+
+
+Usuario <|-- Cliente : é um
+Usuario <|-- Restaurante : é um
+Usuario "1" -- "1" StatusConta : possui
+Cliente "1" -- "*" Booking : realiza
+Cliente "1" -- "*" DispositivoMobile : utiliza
+Cliente "1" -- "*" Avaliacao : faz
+Cliente "1" -- "*" Notificacao : recebe
+Restaurante "1" -- "*" Mesa : possui
+Restaurante "1" -- "*" Categoria : pertence a
+Restaurante "1" -- "1" Endereco : está localizado em
+Restaurante "1" -- "1" HorarioFuncionamento : funciona em
+Restaurante "1" -- "*" Avaliacao : recebe
+
+Mesa "1" -- "*" BookingMesa : é alocada em
+BookingMesa "*" -- "1" Booking : faz parte de
+Mesa "1" -- "1" StatusMesa : está com
+Mesa "1" -- "1" TipoMesa : é de
+
+Booking "1" -- "1" StatusBooking : está com
+Booking "*" -- "1" Cliente : é feito por
+Booking "*" -- "1" Restaurante : é feito para
+Booking "1" -- "*" Mesa : reserva
+Booking "0..1" -- "0..1" Pagamento : possui
+Booking "1" -- "1" TermoAceito : está associado a
+Booking "1" -- "*" LembreteBooking : possui
+
+Pagamento "1" -- "1" StatusPagamento : está com
+Pagamento "1" -- "1" TermoUso : está de acordo com
+
+TermoUso "1" -- "1" TipoTermo : é de
+TermoUso "1" -- "1" StatusTermo : está com
+TermoAceito "1" -- "1" TermoUso : refere-se a
+TermoAceito "1" -- "1" Usuario : é aceito por
+
+Avaliacao "*" -- "1" Cliente : é feita por
+Avaliacao "*" -- "1" Restaurante : é feita para
+Avaliacao "0..1" -- "0..1" Booking : refere-se a
+Avaliacao "1" -- "1" StatusAvaliacao : está com
+
+Notificacao "*" -- "1" Usuario : é enviada para
+Notificacao "1" -- "1" TipoNotificacao : é de
+Notificacao "1" -- "1" StatusNotificacao : está com
+LembreteBooking "1" -- "1" TipoLembrete : é enviado via
+LembreteBooking "*" -- "1" Booking : lembra sobre
 @enduml
