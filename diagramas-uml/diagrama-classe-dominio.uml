@@ -199,7 +199,8 @@ hide circle
     -valor
     -status
     -dataHora
-    -referencia
+    -transacaoId
+    -comprovante
   }
 
   class StatusPagamento {
@@ -209,6 +210,15 @@ hide circle
     REJEITADO
     ESTORNADO
     EXPIRADO
+  }
+
+  class MetodoPagamento {
+    -id
+    -tipo
+    -descricao
+    -ultimosDigitos
+    -nomePortador
+    -tokenizado
   }
 
   class TipoPagamento {
@@ -242,6 +252,7 @@ Usuario <|-- Restaurante : é um
 Usuario "1" -- "1" StatusConta : possui
 Cliente "1" -- "*" Booking : realiza
 Cliente "1" -- "*" DispositivoMobile : utiliza
+Cliente "1" -- "*" MetodoPagamento : possui
 Cliente "1" -- "*" Avaliacao : faz
 Cliente "1" -- "*" Notificacao : recebe
 Restaurante "1" -- "*" Mesa : possui
@@ -264,7 +275,9 @@ Booking "1" -- "1" TermoAceito : está associado a
 Booking "1" -- "*" LembreteBooking : possui
 
 Pagamento "1" -- "1" StatusPagamento : está com
-Pagamento "1" -- "1" TermoUso : está de acordo com
+Pagamento "1" -- "1" MetodoPagamento : utiliza
+Pagamento "1" -- "1" TermoUso : está associado a
+MetodoPagamento "1" -- "1" TipoPagamento : é de
 
 TermoUso "1" -- "1" TipoTermo : é de
 TermoUso "1" -- "1" StatusTermo : está com
