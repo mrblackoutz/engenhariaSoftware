@@ -2,7 +2,7 @@
 
     actor Cliente as ator_cliente
     boundary realizarReservaGUI as fronteira <<boundary>>
-    control ControladorRealizarReserva as controller <<boundary>>
+    control ControladorRealizarReserva as controller <<control>>
     collections "restaurantes : Restaurante" as list_restaurante
     participant Reserva
     participant Restaurante
@@ -27,6 +27,7 @@
     end
 
     controller --> fronteira : listaRestaurantesEncontrados : List <Restaurante>
+    fronteira -> fronteira : TelaListagemRestaurantes(restaurantes = listaRestaurantesEncontrados : List <Restaurante>)
     ator_cliente -> fronteira : Seleciona restaurante desejado
     fronteira -> controller : selecionarRestaurante(idRestaurante : int)
     controller -> list_restaurante : buscarRestaurante(idRestaurante: int)
@@ -47,7 +48,6 @@
     controller --> fronteira : MesasLivres : List <Mesa>
     fronteira -> fronteira : telaSelecaoMesa(MesasLivres : List <Mesa>)
     ator_cliente -> fronteira : Seleciona mesa desejada
-    ator_cliente -> fronteira : Faz login
     fronteira -> controller : reservarMesa(mesaDesejada : Mesa, cliente : Cliente)
     controller -> Reserva : reservarMesa(restaurante : Restaurante, mesa : Mesa, data : datetime, hora : datetime, cliente : Cliente)
     activate Reserva
@@ -87,6 +87,6 @@
     Reserva --> controller : response "Reserva finalizada"
     deactivate Reserva
     controller --> fronteira : response "Reserva finalizada com sucesso"
-    fronteira --> fronteira : TelaDeReservaConcluida()
+    fronteira -> fronteira : TelaDeReservaConcluida()
 
 @enduml
