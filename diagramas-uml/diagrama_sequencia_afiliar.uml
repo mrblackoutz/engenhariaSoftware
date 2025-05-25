@@ -3,56 +3,41 @@
     actor Cliente as ator_cliente
     boundary AfiliarGUI as fronteira <<boundary>>
     control ControladorAfiliar as controler <<controller>>
-    collections "clientes : Cliente" as lista_cliente
-    participant "Cliente" as class_cliente
+    collections "termos : TermoDeUso" as lista_termo
+    collections "clientes : Cliente" as lista_clientes
+    participant Cliente
     participant TermosDeUso as class_termo
 
     ator_cliente -> fronteira : Realizar reserva
     activate fronteira
     fronteira -> fronteira : exibirTelaDeAfiliacao()
     ator_cliente -> fronteira : Seleciona "Abrir nova conta" 
-    ator_cliente -> fronteira : Insere CPF
-    
-    fronteira -> controler : buscaEmailJaCadastrado(CPF : string)
+    fronteira -> controler : obterTermoDeAfiliacao()
     activate controler
-    controler -> lista_cliente : buscarCliente(CPF : string)
-    activate lista_cliente
-    lista_cliente --> controler : msgClienteEncontrado : bool
-    deactivate lista_cliente
 
-    alt CPF_ja_cadastrado (msgClienteEncontrado == true)
-        controler --> fronteira : response "Cliente já cadastrado"
-        fronteira -> fronteira : exibirTelaDeAfiliacao()
-        ator_cliente -> fronteira : Insere senha da conta ou seleciona "Esqueci minha senha"
-    end
+    controler -> lista_termo: obterTermoDeAfiliacao()
+    activate lista_termo
+    lista_termo --> controler : termoDeAfiliacao : TermoDeUso
+    deactivate lista_termo
+    controler --> fronteira : termoDeAfiliacao : TermoDeUso
+    fronteira -> fronteira : TelaTermoDeAfiliacao(termo = termoDeAfiliacao : TermoDeUso)
+    ator_cliente -> fronteira : Informa nome, CPF, email, senha e preferências e aceita termo de afiliação
+    ator_cliente -> fronteira : Seleciona opção "confirmar"
 
-    deactivate lista_cliente
-    controler --> fronteira : response "CPF não cadastrado"
-    controler -> class_termo : obterTermoDeUso()
+    fronteira -> controler : abrirConta(CPF : string, Nome : string, email, preferencias : List<string>, termoAfiliacao = termoDeAfiliacao : TermoDeUso)
+    controler -> lista_clientes : solicitarAfiliacaoCliente(CPF : string, Nome : string, email, preferencias : List<string>, termoAfiliacao = termoDeAfiliacao : TermoDeUso)
+    activate lista_clientes
+    lista_clientes ->  Cliente **: create 
+    activate Cliente
+    Cliente -> class_termo : assinarTermoDeUso(CPF : string, horario : datetime)
     activate class_termo
-    class_termo --> controler : Return documento termo de uso
-    deactivate class_termo
-    controler --> fronteira : Conteúdo termo de uso
-    ator_cliente -> fronteira : Preenche formulario de cadastro
-    ator_cliente -> fronteira : Marca checkbox "Li e concordo com o termo de uso"
-    ator_cliente -> fronteira : Seleciona confirmar
-
-    fronteira -> controler : abrirConta(CPF : string, Nome : string, email, preferencias : string)
-    controler -> class_cliente : criarCliente(CPF : string, Nome : string, email, preferencias : string, horario : datetime)
-    activate class_cliente
-    class_cliente -> class_termo : assinarTermoDeUso(CPF : string, horario : datetime)
-    activate class_termo
-    class_termo --> class_cliente : msgTermoCadastrado : bool
+    class_termo --> Cliente : msgTermoCadastrado : bool
     deactivate class_termo
 
-    alt erro_cadastro_termo (msgTermoCadastrado == false)
-        class_cliente --> controler : throw exception "Erro no cadastramento do termo"
-        controler --> fronteira : response "Erro ao aceitar termo de uso"
-        fronteira -> fronteira : exibirTelaDeErro()
-    end
-
-    class_cliente --> controler : response "Cliente cadastrado"
-    deactivate class_cliente
+    Cliente --> lista_clientes : response "Cliente cadastrado"
+    deactivate Cliente 
+    lista_clientes --> controler : response "Cadastro realizado"
+    deactivate lista_clientes
     controler --> fronteira : response "Cadastro realizado"
     deactivate controler
     fronteira -> fronteira : exibirTelaCadastroConcluido()
