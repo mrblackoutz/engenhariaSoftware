@@ -9,9 +9,8 @@
     participant Pagamento
     participant Restaurante as class_restaurante
 
-    ator_restaurante -> fronteira : Realiza afiliação
-    activate fronteira
     ator_restaurante -> fronteira : Consultar planos disponiveis
+    activate fronteira
     fronteira -> controller : buscarPlanosDisponiveis(restaurante : Restaurante)
     activate controller
     controller -> lista_planos : buscarPlanosDisponiveis(restaurante : Restaurante)
