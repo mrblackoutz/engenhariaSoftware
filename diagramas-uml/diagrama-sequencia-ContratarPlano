@@ -1,58 +1,75 @@
 @startuml
-actor Restaurante
-boundary PlanoUI <<boundary>>
-control PlanoController <<control>>
-collections "planos : Plano" as planos
-participant Plano
-participant Pagamento
 
-== Seleção do Plano ==
-Restaurante -> PlanoUI : selecionarPlano(planoID)
-activate PlanoUI
-PlanoUI -> PlanoController : solicitarDetalhesPlano(planoID)
-activate PlanoController
+    actor Restaurante as ator_restaurante
+    boundary ContratarPlanoGUI as fronteira <<boundary>>
+    control ControladorContratarPlano as controller <<control>>
+    collections "planos : Plano" as lista_planos
+    participant Plano
+    participant TermoDeUso
+    participant Pagamento
+    participant Restaurante as class_restaurante
 
-PlanoController -> planos : obterDetalhesPlano(planoID)
-activate planos
-planos -> Plano : getDetalhes(planoID)
-activate Plano
-Plano --> planos : detalhes(preço, termos)
-deactivate Plano
-planos --> PlanoController : retornaDetalhes(preço, termos)
-deactivate planos
-
-PlanoController -> PlanoUI : exibirDetalhesPlano(preço, termos)
-deactivate PlanoController
-PlanoUI -> Restaurante : mostrarDetalhesPlano()
-deactivate PlanoUI
-
-== Confirmação e Pagamento ==
-Restaurante -> PlanoUI : confirmarContratacao(dadosPagamento)
-activate PlanoUI
-PlanoUI -> PlanoController : processarContratacao(planoID, restauranteID, dadosPagamento)
-activate PlanoController
-
-PlanoController -> Pagamento : processarPagamento(dadosPagamento)
-activate Pagamento
-Pagamento --> PlanoController : resultadoPagamento(sucesso/falha)
-deactivate Pagamento
-
-alt sucesso
-    ' Após pagamento, delega à coleção a solicitação de criação da assinatura
-    PlanoController -> planos : solicitaCriacaoAssinatura(planoID, restauranteID)
-    activate planos
-    planos -> Plano : createAssinatura(planoID, restauranteID)
+    ator_restaurante -> fronteira : Realiza afiliação
+    activate fronteira
+    ator_restaurante -> fronteira : Consultar planos disponiveis
+    fronteira -> controller : buscarPlanosDisponiveis(restaurante : Restaurante)
+    activate controller
+    controller -> lista_planos : buscarPlanosDisponiveis(restaurante : Restaurante)
+    activate lista_planos
+    lista_planos --> controller : planosDisponiveis : List<Plano>
+    deactivate lista_planos
+    controller --> fronteira : planosDisponiveis : List<Plano>
+    fronteira -> fronteira : ListarPlanosDisponiveis(planosDisponiveis : List<Plano>)
+    ator_restaurante -> fronteira : Seleciona plano desejado
+    fronteira -> controller : contratarPlano(restaurante : Restaurante, plano : Plano, data : datetime, hora : datetime)
+    
+    'ACEITE DO TERMO DE USO DO PLANO
+    controller -> Plano : getTermoDeUso()
     activate Plano
-    Plano --> planos : assinaturaCriada
+    Plano -> TermoDeUso : getTermoDeUso()
+    activate TermoDeUso
+    TermoDeUso --> Plano : termoDeUsoPlano : TermoDeUso
+    Plano --> controller : termoDeUsoPlano : TermoDeUso
+    controller --> fronteira : termoDeUsoPlano : TermoDeUso
+    fronteira -> fronteira : exibirTermoDeUso(termoDeUsoPlano : TermoDeUso)
+    ator_restaurante -> fronteira : Marca opção "Li e concordo com o termo de uso"
+    fronteira -> controller : aceitarTermoDeUso(restaurante : Restaurante, data : datetime, hora : datetime)
+    controller -> Plano : aceitarTermoDeUso(restaurante : Restaurante, data : datetime, hora : datetime)
+    Plano -> TermoDeUso : aceitarTermoDeUso(restaurante : Restaurante, data : datetime, hora : datetime)
+    TermoDeUso -> TermoDeUso : aceiteTermoDeUso(plano : Plano, restaurante : Restaurante, data : datetime, hora : datetime)
+    TermoDeUso --> Plano : response "Termo de uso aceito"
+    deactivate TermoDeUso
+    Plano --> controller : response "Termo de uso aceito"
+
+    'PAGAMENTO DO PLANO
+    controller -> Pagamento : criarNovoPagamentoPlano(valor = Plano.preco : float, restaurante : Restaurante)
+    activate Pagamento
+    Pagamento --> controller : pagamentoContratacaoPlano : Pagamento
+    controller --> fronteira : pagamentoContratacaoPlano : Pagamento
+    fronteira -> fronteira : TelaDePagamento(pagamentoContratacaoPlano : Pagamento)
+    ator_restaurante -> fronteira : Seleciona forma de pagamento
+    ator_restaurante -> fronteira : Realiza pagamento
+    fronteira -> controller : informacoesPagamento(formaPagamento: string, pagamento : Pagamento)
+    controller -> Pagamento : informacoesPagamento(formaPagamento: string, pagamento : Pagamento)
+    Pagamento -> Pagamento : processarPagamento(formaPagamento : string)
+    Pagamento --> controller : pagamentoConcluido : bool
+    deactivate Pagamento
+    alt Pagamento_Recusado
+        controller --> fronteira : throws exception "Pagamento recusado"
+        fronteira -> fronteira : TelaDeErro(msgErro : exception)
+    end
+    controller --> fronteira : response "Pagamento concluido com sucesso"
+    controller -> class_restaurante : afiliarPlano(plano : Plano, data : datetime, hora : datetime)
+    activate class_restaurante
+    class_restaurante --> controller : response "Plano afiliado com sucesso"
+    deactivate class_restaurante
+
+    controller -> Plano : afiliarNovoRestaurante(restaurante : Restaurante, data : datetime, hora : datetime)
+    Plano --> controller : response "Plano afiliado ao restaurante"
     deactivate Plano
-    planos --> PlanoController : confirmacaoAssinatura
-    deactivate planos
 
-    PlanoController -> PlanoUI : mostrarMensagem("Plano contratado com sucesso")
-else falha
-    PlanoController -> PlanoUI : mostrarMensagem("Pagamento recusado, tente novamente")
-end
+    controller --> fronteira : responde "Plano contratado com sucesso"
+    deactivate controller
+    fronteira -> fronteira : TelaDePlanoContratado()
 
-deactivate PlanoController
-deactivate PlanoUI
 @enduml
