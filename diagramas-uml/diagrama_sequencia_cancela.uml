@@ -1,61 +1,49 @@
 @startuml
-actor Cliente
-boundary CancelaReservaGUI <<boundary>>
-control ControladorCancelaReserva <<control>>
-collections "reservas : Reserva" as reservas
-participant Reserva
-participant BookingMesas
-participant Restaurante
-participant Pagamento
+    actor Cliente as ator_cliente
+    boundary CancelaReservaGUI as fronteira <<boundary>>
+    control ControladorCancelarReserva as controller <<control>>
+    collections "reservas: Reserva" as lista_reservas
+    participant Reserva
+    participant Restaurante
+    participant BookingMesas as book
+    participant Mesa
 
-' 1) Cliente inicia cancelamento
-Cliente -> CancelaReservaGUI : cancelarReserva(reservaId)
-activate CancelaReservaGUI
-CancelaReservaGUI -> ControladorCancelaReserva : solicitarCancelamento(reservaId)
-activate ControladorCancelaReserva
+    ator_cliente -> fronteira : Realiza afiliação
+    activate fronteira
+    ator_cliente -> fronteira : Consulta reservas agendadas
+    fronteira -> controller : buscarReservasAgendadas(cliente : Cliente)
+    activate controller
+    controller -> lista_reservas : getReservasAtivas(cliente : Cliente)
+    activate lista_reservas
+    lista_reservas --> controller : ReservasAtivasCliente : List<Reserva>
+    deactivate lista_reservas
+    alt Nenhuma_reserva_ativa
+        controller --> fronteira : response "Nenhuma reserva ativa encontrada para esse cliente"
+        fronteira -> fronteira : TelaNenhumaReservaAtiva()
+    end
+    controller --> fronteira : ReservasAtivasCliente : List<Reserva>
+    fronteira --> fronteira : ListagemReservasAtivas(ReservasAtivasCliente: List<Reserva>)
+    ator_cliente -> fronteira : Seleciona reserva que deseja cancelar
+    fronteira -> controller : cancelarReserva(reserva : Reserva)
+    controller -> Reserva : cancelar()
+    activate Reserva
+    Reserva -> Restaurante : liberarMesa(mesa : Mesa, data : datetime, hora : datetime)
+    activate Restaurante
+    Restaurante -> book : liberarMesa(mesa : Mesa, data : datetime, hora : datetime)
+    activate book
+    book -> Mesa : liberar(data : datetime, hora : datetime)
+    activate Mesa
+    Mesa --> book : response "Mesa liberada"
+    deactivate Mesa
+    book --> Restaurante : response "Booking atualizado"
+    deactivate book
+    Restaurante --> Reserva : response "Mesa liberada"
+    deactivate Restaurante
+    Reserva -> Reserva : atualizarStatus(status="Cancelada")
+    Reserva --> controller : response "Reserva cancelada"
+    deactivate Reserva
+    controller --> fronteira : response "Cancelamento concluído"
+    deactivate controller
+    fronteira -> fronteira : TelaConfirmacaoCancelamento(reservaCancelada : Reserva)
 
-' 2) Controlador pede à coleção para buscar a instância
-ControladorCancelaReserva -> reservas : buscarReserva(reservaId)
-activate reservas
-reservas -> Reserva : find(reservaId)
-activate Reserva
-Reserva --> reservas : retornaInstância
-deactivate Reserva
-reservas --> ControladorCancelaReserva : retornaReserva
-deactivate reservas
-
-alt Reserva com pagamento
-    ' 3) Se houver pagamento, processa estorno
-    ControladorCancelaReserva -> Pagamento : processarEstorno(reservaId)
-    activate Pagamento
-    Pagamento --> ControladorCancelaReserva : estornoConfirmado
-    deactivate Pagamento
-end
-
-' 4) Controlador solicita cancelamento
-ControladorCancelaReserva -> reservas : solicitarCancelamento(reserva)
-activate reservas
-
-' 5) Reserva atualiza seu status e libera recursos
-reservas -> Reserva : cancelar()
-activate Reserva
-Reserva -> BookingMesas : liberarMesa(data, hora, mesa)
-activate BookingMesas
-BookingMesas --> Reserva : mesaLiberada
-deactivate BookingMesas
-
-Reserva -> Restaurante : notificarCancelamento(reservaId)
-activate Restaurante
-Restaurante --> Reserva : confirmaçãoRecebida
-deactivate Restaurante
-
-Reserva --> reservas : cancelamentoConcluído
-deactivate Reserva
-reservas --> ControladorCancelaReserva : cancelamentoConfirmado
-deactivate reservas
-
-' 6) Controlador informa GUI
-ControladorCancelaReserva -> CancelaReservaGUI : exibirSucesso()
-deactivate ControladorCancelaReserva
-deactivate CancelaReservaGUI
 @enduml
