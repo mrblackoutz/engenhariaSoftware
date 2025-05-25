@@ -1,64 +1,54 @@
 @startuml
+title Diagrama de Componentes - MesaFácil (Corrigido)
 
-    title Diagrama de Componentes - MesaFácil
+package "Componentes de Negócio" {
 
-    ' == DECLARAÇÃO DOS COMPONENTES ==
+  [ComponenteUsuario] as CUsuario
+  [ComponenteReserva] as CReserva
+  [ComponenteRestaurante] as CRestaurante
+  [ComponenteNotificacao] as CNotificacao
+  [ComponentePagamento] as CPagamento
+  [ComponenteAvaliacao] as CAvaliacao
+  [ComponenteTermos] as CTermos
+}
 
-    package "Componentes Funcionais" as ComFum{
-        ' // Camada de de interface
-        [AppCliente]                 as AppCli
-        [AppRestaurante]             as AppRes
+package "Interfaces" {
+  [IUsuario]
+  [IReserva]
+  [IRestaurante]
+  [INotificacao]
+  [IPagamento]
+  [IAvaliacao]
+  [ITermos]
+}
 
-       ' // Camada do controlador
-        [ControladorRelatorios]      as CntrlRela
-        [ControladorReservas]        as CntrlRsrv
+' Interfaces oferecidas
+CUsuario -[hidden]-> IUsuario
+CUsuario --> IUsuario : <<interface>> fornece
+CReserva --> IReserva : <<interface>> fornece
+CRestaurante --> IRestaurante : <<interface>> fornece
+CNotificacao --> INotificacao : <<interface>> fornece
+CPagamento --> IPagamento : <<interface>> fornece
+CAvaliacao --> IAvaliacao : <<interface>> fornece
+CTermos --> ITermos : <<interface>> fornece
 
-        ' // Camada do Gerenciador
-        [GerenciadorAcessos]         as GerAcss
-        [GerenciadorNotificacoes]    as GerNot
-        [GerenciadorPagamentos]      as GerPag
+' Dependências entre componentes
+CReserva ..> CUsuario : usa
+CReserva ..> CRestaurante : usa
+CReserva ..> CNotificacao : usa
+CReserva ..> CPagamento : usa
+CReserva ..> CTermos : valida
 
-        ' // Camada de processador de pagamentos
-        [ProcessadorPagamentos]      as PrcPag
+CAvaliacao ..> CReserva : refere-se a
+CAvaliacao ..> CUsuario : feita por
+CAvaliacao ..> CRestaurante : feita para
 
-        ' // Camada de processador de emails
-        [ProcessadorEmail]           as PrcEmail
+CNotificacao ..> CUsuario : envia para
+CNotificacao ..> CReserva : sobre reserva
 
-        ' // Camada de Base de dados
-        [BasesReserva]               as RsrvDB
-        [BasesClientes]              as CliDB
-        [BasesRestaurantes]          as ResDB
-        [BasesFuncionarios]          as FuncDB
-        [BasesDesempenhoRestaurante] as DesResDB
-    }
-    
-    ' // Camada de MiddleWare
-    [Segurança]                  as Seg
-    [Comunicação]                as Com
-    
-    ' == INTERAÇÕES ==
+CPagamento ..> CUsuario : pagamento por
+CPagamento ..> CReserva : pagamento de
 
-    AppCli --> CntrlRsrv
-
-    AppRes --> CntrlRsrv
-    AppRes --> CntrlRela
-
-    CntrlRsrv --> GerPag
-    CntrlRsrv --> GerNot
-    CntrlRsrv --> CliDB
-    CntrlRsrv --> ResDB
-    CntrlRsrv --> RsrvDB
-
-    CntrlRela --> GerAcss
-    CntrlRela --> DesResDB
-
-    GerPag --> PrcPag    
-
-    GerAcss --> FuncDB
-
-    GerNot --> PrcEmail
-
-    Seg --> ComFum
-    Com --> ComFum
-
+CTermos ..> CUsuario : aceito por
+CTermos ..> CPagamento : vincula termo
 @enduml
