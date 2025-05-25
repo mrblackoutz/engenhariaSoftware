@@ -7,9 +7,9 @@
     participant "Cliente" as class_cliente
     participant TermosDeUso as class_termo
 
-    ator_cliente -> fronteira : Tenta realizar reserva
+    ator_cliente -> fronteira : Realizar reserva
     activate fronteira
-    fronteira -> fronteira : exibirTelaDeLogin()
+    fronteira -> fronteira : exibirTelaDeAfiliacao()
     ator_cliente -> fronteira : Seleciona "Abrir nova conta" 
     ator_cliente -> fronteira : Insere CPF
     
@@ -22,7 +22,7 @@
 
     alt CPF_ja_cadastrado (msgClienteEncontrado == true)
         controler --> fronteira : response "Cliente já cadastrado"
-        fronteira -> fronteira : exibirTelaDeLogin()
+        fronteira -> fronteira : exibirTelaDeAfiliacao()
         ator_cliente -> fronteira : Insere senha da conta ou seleciona "Esqueci minha senha"
     end
 
