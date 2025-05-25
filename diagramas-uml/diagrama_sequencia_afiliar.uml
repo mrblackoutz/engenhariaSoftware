@@ -1,62 +1,60 @@
 @startuml
-actor Cliente
-boundary AfiliarGUI <<boundary>>
-control ControladorAfiliar <<controller>>
-collections "clientes : Cliente" as clientes
-participant "Cliente" as cliente
-participant TermosDeUso
 
-Cliente -> AfiliarGUI : InformaDadosPessoais()
-activate AfiliarGUI
-AfiliarGUI -> ControladorAfiliar : SolicitarAfiliação(CPF, Nome, email)
-activate ControladorAfiliar
+    actor Cliente as ator_cliente
+    boundary AfiliarGUI as fronteira <<boundary>>
+    control ControladorAfiliar as controler <<controller>>
+    collections "clientes : Cliente" as lista_cliente
+    participant "Cliente" as class_cliente
+    participant TermosDeUso as class_termo
 
-ControladorAfiliar -> clientes : verificaSeValido(CPF, Nome, email)
-
-alt ehValido
-    ControladorAfiliar -> AfiliarGUI : PedirVerificacaoEmail()
+    ator_cliente -> fronteira : Tenta realizar reserva
+    activate fronteira
+    fronteira -> fronteira : exibirTelaDeLogin()
+    ator_cliente -> fronteira : Seleciona "Abrir nova conta" 
+    ator_cliente -> fronteira : Insere CPF
     
-    ControladorAfiliar -> clientes : solicitarNovaAfiliação(CPF, Nome, email)
-    activate clientes
+    fronteira -> controler : buscaEmailJaCadastrado(CPF : string)
+    activate controler
+    controler -> lista_cliente : buscarCliente(CPF : string)
+    activate lista_cliente
+    lista_cliente --> controler : msgClienteEncontrado : bool
+    deactivate lista_cliente
 
-    clientes -> cliente : createNewCliente(CPF, Nome, email)
-    activate cliente
-    cliente --> clientes : retorna novo cliente
-    deactivate cliente
-    deactivate clientes
-
-    ControladorAfiliar -> TermosDeUso : SolicitarTermos()
-    TermosDeUso --> ControladorAfiliar : retorna termos
-    ControladorAfiliar -> AfiliarGUI : ExibirTermosDeUso()
-
-    alt Cliente aceita os termos
-        Cliente -> AfiliarGUI : AceitaTermos()
-        AfiliarGUI -> ControladorAfiliar : RegistrarAceite()
-
-        ControladorAfiliar -> cliente : registrarAceite()
-        activate cliente
-        cliente --> ControladorAfiliar : confirmação
-        deactivate cliente
-
-        ControladorAfiliar -> AfiliarGUI : ExibirSucessoAfiliação()
-
-    else Cliente recusa os termos
-        Cliente -> AfiliarGUI : RecusaTermos()
-        AfiliarGUI -> ControladorAfiliar : CancelarAfiliação()
-
-        ControladorAfiliar -> clientes : solicitarExclusao(cliente)
-        activate clientes
-        clientes -> cliente : excluir()
-        cliente --> clientes : confirmação
-        deactivate clientes
-
-        ControladorAfiliar -> AfiliarGUI : ExibirCancelamento()
+    alt CPF_ja_cadastrado (msgClienteEncontrado == true)
+        controler --> fronteira : response "Cliente já cadastrado"
+        fronteira -> fronteira : exibirTelaDeLogin()
+        ator_cliente -> fronteira : Insere senha da conta ou seleciona "Esqueci minha senha"
     end
 
-else
-    ControladorAfiliar -> AfiliarGUI : ExibirErroValidacao()
-end
+    deactivate lista_cliente
+    controler --> fronteira : response "CPF não cadastrado"
+    controler -> class_termo : obterTermoDeUso()
+    activate class_termo
+    class_termo --> controler : Return documento termo de uso
+    deactivate class_termo
+    controler --> fronteira : Conteúdo termo de uso
+    ator_cliente -> fronteira : Preenche formulario de cadastro
+    ator_cliente -> fronteira : Marca checkbox "Li e concordo com o termo de uso"
+    ator_cliente -> fronteira : Seleciona confirmar
 
-deactivate ControladorAfiliar
-deactivate AfiliarGUI
+    fronteira -> controler : abrirConta(CPF : string, Nome : string, email, preferencias : string)
+    controler -> class_cliente : criarCliente(CPF : string, Nome : string, email, preferencias : string, horario : datetime)
+    activate class_cliente
+    class_cliente -> class_termo : assinarTermoDeUso(CPF : string, horario : datetime)
+    activate class_termo
+    class_termo --> class_cliente : msgTermoCadastrado : bool
+    deactivate class_termo
+
+    alt erro_cadastro_termo (msgTermoCadastrado == false)
+        class_cliente --> controler : throw exception "Erro no cadastramento do termo"
+        controler --> fronteira : response "Erro ao aceitar termo de uso"
+        fronteira -> fronteira : exibirTelaDeErro()
+    end
+
+    class_cliente --> controler : response "Cliente cadastrado"
+    deactivate class_cliente
+    controler --> fronteira : response "Cadastro realizado"
+    deactivate controler
+    fronteira -> fronteira : exibirTelaCadastroConcluido()
+
 @enduml
