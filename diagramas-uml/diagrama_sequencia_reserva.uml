@@ -1,63 +1,92 @@
 @startuml
-actor Cliente
-boundary FazReservaGUI <<boundary>>
-control ControladorFazReserva <<control>>
-collections "BookingMesas" as bookingMesas
-participant Mesa
-participant Reserva
-participant Pagamento
 
-' 1) Consulta de disponibilidade
-Cliente -> FazReservaGUI : SelecionarReserva()
-activate FazReservaGUI
-FazReservaGUI -> ControladorFazReserva : solicitarDisponibilidade(restaurante, data, horário)
-activate ControladorFazReserva
+    actor Cliente as ator_cliente
+    boundary realizarReservaGUI as fronteira <<boundary>>
+    control ControladorRealizarReserva as controller <<boundary>>
+    collections "restaurantes : Restaurante" as list_restaurante
+    participant Reserva
+    participant Restaurante
+    collections "BookingMesas" as book
+    participant Pagamento    
+    participant Mesa
 
-ControladorFazReserva -> bookingMesas : consultarMesasDisponiveis(restaurante, data, horário)
-activate bookingMesas
-bookingMesas -> Mesa : listarDisponíveis(restaurante, data, horário)
-activate Mesa
-Mesa --> bookingMesas : mesasDisponíveis
-deactivate Mesa
-bookingMesas --> ControladorFazReserva : retornaDisponibilidade
-deactivate bookingMesas
-ControladorFazReserva --> FazReservaGUI : mostraDisponibilidade()
-deactivate ControladorFazReserva
-deactivate FazReservaGUI
+    ator_cliente -> fronteira : Busca por restaurantes disponiveis
+    activate fronteira
+    ator_cliente -> fronteira : Informa região e tipo de restaurante
+    
+    fronteira -> controller : buscarRestaurantes(regiao: string, tipo: string)
+    activate controller
+    controller -> list_restaurante : filtrarRestaurantes(regiao: string, tipo: string)
+    activate list_restaurante
+    list_restaurante --> controller : restaurantesEntcontrados : List <Restaurate>
+    deactivate list_restaurante
 
-' 2) Confirmação da reserva (com eventual pagamento)
-Cliente -> FazReservaGUI : confirmarReserva(mesaEscolhida)
-activate FazReservaGUI
-FazReservaGUI -> ControladorFazReserva : enviarDadosReserva(restaurante, data, horário, mesa)
-activate ControladorFazReserva
+    alt nenhum_restaurante_encontrado
+        controller --> fronteira : response "Nenhum restaurante encontrado"
+        fronteira -> fronteira : exibirTelaNenhumRestauranteEncontrado()
+    end
 
-alt pagamento necessário
-    ControladorFazReserva -> Pagamento : processarPagamento(dadosCartão)
-    activate Pagamento
-    Pagamento --> ControladorFazReserva : pagamentoConfirmado
-    deactivate Pagamento
-end
+    controller --> fronteira : listaRestaurantesEncontrados : List <Restaurante>
+    ator_cliente -> fronteira : Seleciona restaurante desejado
+    fronteira -> controller : selecionarRestaurante(idRestaurante : int)
+    controller -> list_restaurante : buscarRestaurante(idRestaurante: int)
+    activate list_restaurante
+    list_restaurante --> controller : restauranteSelecionado : Restaurante
+    deactivate list_restaurante
+    controller --> fronteira : restauranteSelecionado : Restaurante
+    ator_cliente -> fronteira : seleciona data, hora e quantidade de pessoas
+    fronteira -> controller : dadosReserva(data : datetime, hora : datetime, qtdPessoas : int)
+    controller -> Restaurante : buscarMesasDisponiveis(data : datetime, hora : datetime, qtdPessoas : int)
+    activate Restaurante
+    Restaurante -> book : getMesasLivres(data: datetime, hora : datetime, qtdPessoas : int)
+    activate book
+    book --> Restaurante : MesasLivres : List <Mesa>
+    deactivate book
+    Restaurante --> controller : MesasLivres : List <Mesa>
+    deactivate Restaurante
+    controller --> fronteira : MesasLivres : List <Mesa>
+    fronteira -> fronteira : telaSelecaoMesa(MesasLivres : List <Mesa>)
+    ator_cliente -> fronteira : Seleciona mesa desejada
+    ator_cliente -> fronteira : Faz login
+    fronteira -> controller : reservarMesa(mesaDesejada : Mesa, cliente : Cliente)
+    controller -> Reserva : reservarMesa(restaurante : Restaurante, mesa : Mesa, data : datetime, hora : datetime, cliente : Cliente)
+    activate Reserva
+    alt Restaurante_Exige_Taxa_De_Reserva
+        Reserva -> Pagamento : criarNovoPagamento(restaurante: Restaurante, cliente: Cliente)
+        activate Pagamento
+        Reserva -> controller : PagamentoExigido : Pagamento
+        controller -> fronteira : PagamentoExigido : Pagamento
+        fronteira -> fronteira : TelaDePagamento(Pagamento)
+        ator_cliente -> fronteira : Seleciona forma de pagamento
+        ator_cliente -> fronteira : Realiza pagamento
+        fronteira -> controller : informacoesPagamento(formaPagamento: string, pagamento : Pagamento)
+        controller -> Reserva : informacoesPagamento(formaPagamento: string, pagamento : Pagamento)
+        Reserva -> Pagamento : processarPagamento(formaPagamento : string)
+        Pagamento --> Reserva : pagamentoConcluido : bool
+        deactivate Pagamento
+        alt Pagamento_Recusado
+            Reserva --> controller : throw exception "Pagamento recusado"
+            controller --> fronteira : response "Pagamento recusado"
+            fronteira -> fronteira : TelaDeErro(msgErro : exception)
+        end
+        Reserva --> controller : pagamentoConcluido : bool
+        controller --> fronteira : response "Pagamento aprovado" 
+    end
+    Reserva -> Restaurante : reservarMesa(mesa : Mesa, data : datetime, hora : datetime, cliente : Cliente)
+    activate Restaurante
+    Restaurante -> book : indisponibilizarMesa(mesa : Mesa, data : datetime, hora : datetime)
+    activate book
+    book -> Mesa : alterarHorarioDisponibilidade(data: datetime, hora : datetime)
+    activate Mesa
+    Mesa --> book : response "Mesa reservada"
+    deactivate Mesa
+    book --> Restaurante : response "Booking atualizado"
+    deactivate book
+    Restaurante --> Reserva : response "Sucesso ao reservar mesa"
+    deactivate Restaurante
+    Reserva --> controller : response "Reserva finalizada"
+    deactivate Reserva
+    controller --> fronteira : response "Reserva finalizada com sucesso"
+    fronteira --> fronteira : TelaDeReservaConcluida()
 
-' 3) BookingMesas cria a Reserva
-ControladorFazReserva -> bookingMesas : solicitarCriaçãoReserva(dadosReserva, cliente)
-activate bookingMesas
-
-bookingMesas -> Reserva : create(dadosReserva, cliente)
-activate Reserva
-
-Reserva -> Mesa : reservarMesa(mesa)
-activate Mesa
-Mesa --> Reserva : confirmaçãoMesa
-deactivate Mesa
-
-Reserva --> bookingMesas : retornaReserva
-deactivate Reserva
-
-bookingMesas --> ControladorFazReserva : retornaReserva
-deactivate bookingMesas
-
-' 4) Exibição de confirmação
-ControladorFazReserva -> FazReservaGUI : exibirConfirmação(reserva)
-deactivate ControladorFazReserva
-deactivate FazReservaGUI
 @enduml
