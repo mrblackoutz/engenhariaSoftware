@@ -8,9 +8,8 @@
     participant BookingMesas as book
     participant Mesa
 
-    ator_cliente -> fronteira : Realiza afiliação
-    activate fronteira
     ator_cliente -> fronteira : Consulta reservas agendadas
+    activate fronteira
     fronteira -> controller : buscarReservasAgendadas(cliente : Cliente)
     activate controller
     controller -> lista_reservas : getReservasAtivas(cliente : Cliente)
@@ -25,7 +24,9 @@
     fronteira --> fronteira : ListagemReservasAtivas(ReservasAtivasCliente: List<Reserva>)
     ator_cliente -> fronteira : Seleciona reserva que deseja cancelar
     fronteira -> controller : cancelarReserva(reserva : Reserva)
-    controller -> Reserva : cancelar()
+    controller -> lista_reservas: cancelarReserva(reserva : Reserva)
+    activate lista_reservas
+    lista_reservas -> Reserva : cancelar()
     activate Reserva
     Reserva -> Restaurante : liberarMesa(mesa : Mesa, data : datetime, hora : datetime)
     activate Restaurante
@@ -40,8 +41,10 @@
     Restaurante --> Reserva : response "Mesa liberada"
     deactivate Restaurante
     Reserva -> Reserva : atualizarStatus(status="Cancelada")
-    Reserva --> controller : response "Reserva cancelada"
+    Reserva --> lista_reservas : response "Reserva cancelada"
     deactivate Reserva
+    lista_reservas --> controller : response "Reserva cancelada"
+    deactivate lista_reservas
     controller --> fronteira : response "Cancelamento concluído"
     deactivate controller
     fronteira -> fronteira : TelaConfirmacaoCancelamento(reservaCancelada : Reserva)
