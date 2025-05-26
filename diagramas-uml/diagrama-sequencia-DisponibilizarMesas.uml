@@ -1,39 +1,43 @@
 @startuml
-actor Restaurante
 
-boundary DisponibilizaMesasGUI <<boundary>>
-control ControladorDisponibilizaMesas <<control>>
-participant BookingMesas
-participant Salao
-participant Mesa
+    actor Restaurante as ator_restaurante
+    boundary DisponibilizarMesasGUI as fronteira <<boundary>>
+    control ControladorDisponibilizarMesas as controller <<control>>
+    participant Restaurante as class_restaurante
+    participant BookingMesas as book 
+    participant Mesa
+    participant Salao
+     
 
-Restaurante -> DisponibilizaMesasGUI : DisponibilizarMesas()
-activate DisponibilizaMesasGUI
+    ator_restaurante -> fronteira : Seleciona opção de cadastrar mesa
+    activate fronteira
+    ator_restaurante -> fronteira : Informa salão, posição no salão e número da mesa
+    fronteira -> controller :  disponibilizarMesa(restaurante : Restaurante, salao : Salao, nroMesa : int, coordenada_x : int, coordenada_y : int)
+    activate controller
 
-DisponibilizaMesasGUI -> ControladorDisponibilizaMesas : enviarDadosDisponibilizacao(data, horario, saloes, mesas)
-activate ControladorDisponibilizaMesas
+    controller -> class_restaurante : cadastrarMesa(salao : Salao, nroMesa : int, coordenada_x : int, coordenada_y : int)
+    activate class_restaurante
 
-ControladorDisponibilizaMesas -> BookingMesas : criarOuAtualizarDisponibilidade(data, horario)
-activate BookingMesas
-BookingMesas --> ControladorDisponibilizaMesas : disponibilidadeCriadaOuAtualizada
-deactivate BookingMesas
+    class_restaurante -> book : criarNovaMesa(salao : Salao, nroMesa : int)
+    activate book
+    book -> Mesa **: create(nroMesa : int)
+    activate Mesa
+    Mesa --> book : response "Mesa criada"
+    deactivate Mesa
+    book --> class_restaurante : response "Mesa criada"
+    deactivate book
 
-loop para cada salao
-    ControladorDisponibilizaMesas -> Salao : ativarSalao(salaoId)
+    class_restaurante -> Salao : vincularMesa(mesaNova : Mesa, coordenada_x : int, coordenada_y : int)
     activate Salao
-
-    loop para cada mesa
-        Salao -> Mesa : definirDisponibilidade(data, horario)
-        activate Mesa
-        deactivate Mesa
-    end
-
-    Salao --> ControladorDisponibilizaMesas : salaoAtualizado
+    Salao --> class_restaurante : response "Mesa cadastrada"
     deactivate Salao
-end
 
-ControladorDisponibilizaMesas -> DisponibilizaMesasGUI : confirmarDisponibilizacao()
-deactivate ControladorDisponibilizaMesas
-deactivate DisponibilizaMesasGUI
+    class_restaurante --> controller : response "Mesa cadastrada com sucesso"
+    deactivate class_restaurante
+
+    controller --> fronteira : response "Sucesso no cadastramento da mesa"
+    deactivate controller
+
+    fronteira -> fronteira : TelaDeMesaCadastrada()
 
 @enduml
