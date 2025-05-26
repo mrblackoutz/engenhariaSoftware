@@ -1,61 +1,73 @@
 @startuml
-actor Restaurante
-boundary AprovarReservaGUI <<boundary>>
-control AprovarReservaController <<control>>
-collections "reservas : Reserva" as reservas
-participant Reserva
-participant Cliente
-participant Pagamento
 
-== Listar Reservas Pendentes ==
-Restaurante -> AprovarReservaGUI : acessarTelaReservas()
-activate AprovarReservaGUI
-AprovarReservaGUI -> AprovarReservaController : listarReservasPendentes()
-activate AprovarReservaController
-AprovarReservaController -> reservas : listarPendentes()
-activate reservas
-reservas --> AprovarReservaController : listaDeReservas
-deactivate reservas
-AprovarReservaController -> AprovarReservaGUI : exibirLista(listaDeReservas)
-deactivate AprovarReservaController
-deactivate AprovarReservaGUI
+    actor Restaurante as ator_restaurante
+    boundary AprovarReservaGUI as fronteira <<boundary>>
+    control AprovarReservaController as controller <<control>>
+    collections "reservas : Reserva" as lista_reservas
+    participant Reserva
+    participant Pagamento
+    participant Cliente
 
-== Aprovar ou Recusar Reserva ==
-Restaurante -> AprovarReservaGUI : selecionarReserva(idReserva, status)
-activate AprovarReservaGUI
-AprovarReservaGUI -> AprovarReservaController : submeterDecisao(idReserva, status)
-activate AprovarReservaController
-
-AprovarReservaController -> reservas : buscar(idReserva)
-activate reservas
-reservas -> Reserva : obterReserva()
-activate Reserva
-Reserva --> reservas : reserva
-deactivate Reserva
-deactivate reservas
-
-alt status == "reservado"
-    Reserva -> Reserva : aprovar()
-    activate Reserva
-    Reserva -> Cliente : notificarAprovacao()
-    Reserva -> reservas : atualizarStatus(idReserva, "reservado")
-    deactivate Reserva
-else status == "recusado"
-    Reserva -> Reserva : recusar()
-    activate Reserva
-    Reserva -> Cliente : notificarRecusa()
-    alt houvePagamento
-        Reserva -> Pagamento : processarEstorno()
-        activate Pagamento
-        Pagamento --> Reserva : estornoConfirmado
-        deactivate Pagamento
+    ator_restaurante -> fronteira : Consulta reservas pendentes de aprovação
+    activate fronteira
+    fronteira -> controller : buscarReservasPendentes(restaurante : Restaurante)
+    activate controller
+    controller -> lista_reservas : buscarReservasPendentes(restaurante : Restaurante)
+    activate lista_reservas
+    lista_reservas --> controller : reservasPendentes : List<Reserva>
+    deactivate lista_reservas
+    controller --> fronteira : reservasPendentes : List<Reserva>
+    fronteira -> fronteira : TelaListagemReservasPendentes(reservas = reservasPendentes : List<Reserva>)
+    ator_restaurante -> fronteira : Seleciona reserva 
+    
+    alt Restaurante aprova a reserva
+        fronteira -> controller : reservaAprovada(reserva : Reserva)
+        controller -> Reserva : atualizaStatus(statusNovo = "Aprovada" : string)
+        activate Reserva
+        Reserva -> Cliente : notificaAprovacao()
+        activate Cliente
+        Cliente -> Cliente : notificaReservaAprovada(reserva : Reserva, destinatario = Cliente.email : string)
+        Cliente --> Reserva : response "Notificação enviada"
+        deactivate Cliente
+        Reserva --> controller : response "Status atualizado"
+        deactivate Reserva
+        controller --> fronteira : response "Reserva aprovada com sucesso"
+        fronteira -> fronteira : msgAprovacaoConcluida()
     end
-    Reserva -> reservas : atualizarStatus(idReserva, "recusado")
-    deactivate Reserva
-end
 
-Reserva --> AprovarReservaController : resultadoDecisao(mensagem)
-AprovarReservaController -> AprovarReservaGUI : mostrarResultado(mensagem)
-deactivate AprovarReservaController
-deactivate AprovarReservaGUI
+    alt Restaurante recusa a reserva
+        fronteira -> controller : reservaRecusada(reserva : Reserva)
+        controller -> Reserva : atualizaStatus(statusNovo = "Recusada" : string)
+        activate Reserva
+        Reserva -> Cliente : notificaRecusa()
+        activate Cliente
+        Cliente -> Cliente : notificaReservaRecusada(reserva : Reserva, destinatario = Cliente.email : string)
+        Cliente --> Reserva : response "Notificação enviada"
+        deactivate Cliente
+        
+        alt Restaurante exige pagamento
+            Reserva -> Pagamento : extornoPagamento(cliente : Cliente, restaurante : Restaurante)
+            activate Pagamento
+            Pagamento -> Pagamento : processaExtorno() : bool
+            Pagamento --> Reserva : extornoRealizado : bool
+            deactivate Pagamento
+
+            alt Extorno recusado
+                Reserva --> controller : throws exception "Extorno de pagamento recusado"
+                controller --> fronteira : throws exception "Extorno de pagamento recusado"
+                fronteira -> fronteira : TelaDeErro(excecao : exception)
+            end
+
+            Reserva -> Cliente : notificaExtorno(pagamento : Pagamento)
+            activate Cliente
+            Cliente -> Cliente : notificaPagamentoExtornado(pagamento : Pagamento, destinatario = Cliente.email)
+            Cliente --> Reserva : response "Notificação enviada"
+            deactivate Cliente
+            Reserva --> controller : response "Extorno realizado com sucesso"
+        end
+
+        controller --> fronteira : response "Reserva recusada com sucesso"
+        fronteira -> fronteira : msgReservaRecusada()
+    end
+
 @enduml
