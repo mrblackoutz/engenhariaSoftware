@@ -6,40 +6,62 @@
     collections "termos : TermoDeUso" as lista_termo
     collections "clientes : Cliente" as lista_clientes
     participant Cliente
+    participant Tokenizer
     participant TermosDeUso as class_termo
-
  
     ator_cliente -> fronteira : Informa nome, CPF, email, senha e preferências
     activate fronteira
-    fronteira -> controler : abrirConta(CPF : string, Nome : string, email, preferencias : List<string>, termoAfiliacao = termoDeAfiliacao : TermoDeUso)
+    fronteira -> controler : abrirConta(CPF, Nome, email, preferencias)
     activate controler
-    controler -> lista_clientes : solicitarAfiliacaoCliente(CPF : string, Nome : string, email, preferencias : List<string>, termoAfiliacao = termoDeAfiliacao : TermoDeUso)
+    controler -> lista_clientes : solicitarAfiliacaoCliente(CPF, Nome, email, preferencias)
     activate lista_clientes
     lista_clientes ->  Cliente **: create 
     activate Cliente
     Cliente --> lista_clientes : response "Cliente criado"
     deactivate Cliente
-    lista_clientes --> controler : clienteCriado : Cliente
+    lista_clientes --> controler : clienteCriado
     deactivate lista_clientes
-    controler --> fronteira : clienteCriado : Cliente
+    controler --> fronteira : clienteCriado
+
+    fronteira -> controler : solicitarConfirmacaoEmail()
+    controler -> Cliente : bloquearCliente() 
+    activate Cliente
+    Cliente -> Tokenizer : gerarToken()
+    activate Tokenizer
+    Tokenizer --> Cliente : token
+    Cliente -> Cliente : enviaNotificacaoToken(token)
+    Cliente --> controler : token
+    controler --> fronteira : token
+    ator_cliente -> fronteira : Insere token
+    fronteira -> controler : validarToken(tokenInserido)
+    controler -> Cliente : validarTokenConta(tokenInserido)
+    Cliente -> Cliente : validarToken(tokenInserido)
+    Cliente -> Tokenizer : descartarToken()
+    Tokenizer --> Cliente : response "Token descartado"
+    deactivate Tokenizer
+    Cliente --> controler : response "Conta validada"
+    deactivate Cliente
+    controler --> fronteira : response "Token validado"     
+
     fronteira -> controler : obterTermoDeAfiliacao()
 
     controler -> lista_termo: obterTermoDeAfiliacao()
     activate lista_termo
-    lista_termo --> controler : termoDeAfiliacao : TermoDeUso
+    lista_termo --> controler : termoDeAfiliacao
     deactivate lista_termo
-    controler --> fronteira : termoDeAfiliacao : TermoDeUso
+    controler --> fronteira : termoDeAfiliacao
 
     ator_cliente -> fronteira : Assina termo de uso
-    fronteira -> controler : assinarTermoAfiliacao(termo = termoDeAfiliacao : TermoDeUso, cliente = Cliente, data : datetime)
-    controler -> Cliente : assinarTermo(termo = termoDeAfiliacao : TermoDeUso)
+    fronteira -> controler : assinarTermoAfiliacao(termo = termoDeAfiliacao, cliente, data)
+    controler -> Cliente : assinarTermo(termo = termoDeAfiliacao)
     activate Cliente
 
-    Cliente -> class_termo : vincularTermoAfiliacao(data : datetime)
+    Cliente -> class_termo : vincularTermoAfiliacao(data)
     activate class_termo
     class_termo --> Cliente : response "Termo vinculado"
     deactivate class_termo
     Cliente --> controler : response "Termo vinculado"
+    deactivate Cliente
     controler --> fronteira : response "Termo de afiliação vinculado" 
 
     deactivate controler
