@@ -5,70 +5,67 @@
     control ControladorContratarPlano as controller <<control>>
     collections "planos : Plano" as lista_planos
     participant Plano
+    participant Restaurante as class_restaurante
     participant TermoDeUso
     participant Pagamento
-    participant Restaurante as class_restaurante
-
+    
     ator_restaurante -> fronteira : Consultar planos disponiveis
     activate fronteira
-    fronteira -> controller : buscarPlanosDisponiveis(restaurante : Restaurante)
+    fronteira -> controller : buscarPlanosDisponiveis(restaurante)
     activate controller
-    controller -> lista_planos : buscarPlanosDisponiveis(restaurante : Restaurante)
+    controller -> lista_planos : buscarPlanosDisponiveis(restaurante)
     activate lista_planos
-    lista_planos --> controller : planosDisponiveis : List<Plano>
+    lista_planos --> controller : planosDisponiveis
     deactivate lista_planos
-    controller --> fronteira : planosDisponiveis : List<Plano>
-    fronteira -> fronteira : ListarPlanosDisponiveis(planosDisponiveis : List<Plano>)
+    controller --> fronteira : planosDisponiveis
     ator_restaurante -> fronteira : Seleciona plano desejado
-    fronteira -> controller : contratarPlano(restaurante : Restaurante, plano : Plano, data : datetime, hora : datetime)
+    fronteira -> controller : contratarPlano(restaurante, plano, data, hora)
     
     'ACEITE DO TERMO DE USO DO PLANO
     controller -> Plano : getTermoDeUso()
     activate Plano
     Plano -> TermoDeUso : getTermoDeUso()
     activate TermoDeUso
-    TermoDeUso --> Plano : termoDeUsoPlano : TermoDeUso
-    Plano --> controller : termoDeUsoPlano : TermoDeUso
-    controller --> fronteira : termoDeUsoPlano : TermoDeUso
-    fronteira -> fronteira : exibirTermoDeUso(termoDeUsoPlano : TermoDeUso)
-    ator_restaurante -> fronteira : Marca opção "Li e concordo com o termo de uso"
-    fronteira -> controller : aceitarTermoDeUso(restaurante : Restaurante, data : datetime, hora : datetime)
-    controller -> Plano : aceitarTermoDeUso(restaurante : Restaurante, data : datetime, hora : datetime)
-    Plano -> TermoDeUso : aceitarTermoDeUso(restaurante : Restaurante, data : datetime, hora : datetime)
-    TermoDeUso -> TermoDeUso : aceiteTermoDeUso(plano : Plano, restaurante : Restaurante, data : datetime, hora : datetime)
-    TermoDeUso --> Plano : response "Termo de uso aceito"
+    TermoDeUso --> Plano : termoDeUsoPlano
+    Plano --> controller : termoDeUsoPlano
+    deactivate Plano
+    controller --> fronteira : termoDeUsoPlano
+    ator_restaurante -> fronteira : Assina o termo de uso do plano
+    fronteira -> controller : aceitarTermoDeUso(restaurante, data, hora)
+    controller -> class_restaurante : aceitarTermoDeUso(data, hora, termo)
+    activate class_restaurante
+    class_restaurante -> TermoDeUso : aceitarTermoDeUso(data, hora)
+    TermoDeUso -> TermoDeUso : aceiteTermoDeUso(plano, restaurante, data, hora)
+    TermoDeUso --> class_restaurante : response "Termo de uso aceito"
     deactivate TermoDeUso
-    Plano --> controller : response "Termo de uso aceito"
+    class_restaurante --> controller : response "Termo de uso aceito"
+    deactivate class_restaurante
 
     'PAGAMENTO DO PLANO
-    controller -> Pagamento : criarNovoPagamentoPlano(valor = Plano.preco : float, restaurante : Restaurante)
+    controller -> Plano : realizarPagamento(restaurante) 
+    activate Plano
+    Plano -> Pagamento **: criarNovoPagamentoPlano(valor, restaurante)
     activate Pagamento
-    Pagamento --> controller : pagamentoContratacaoPlano : Pagamento
-    controller --> fronteira : pagamentoContratacaoPlano : Pagamento
-    fronteira -> fronteira : TelaDePagamento(pagamentoContratacaoPlano : Pagamento)
-    ator_restaurante -> fronteira : Seleciona forma de pagamento
-    ator_restaurante -> fronteira : Realiza pagamento
-    fronteira -> controller : informacoesPagamento(formaPagamento: string, pagamento : Pagamento)
-    controller -> Pagamento : informacoesPagamento(formaPagamento: string, pagamento : Pagamento)
-    Pagamento -> Pagamento : processarPagamento(formaPagamento : string)
-    Pagamento --> controller : pagamentoConcluido : bool
+    Pagamento --> Plano : pagamentoContratacaoPlano
+    Plano --> controller : pagamentoContratacaoPlano
+    controller --> fronteira : pagamentoContratacaoPlano
+    ator_restaurante -> fronteira : Seleciona forma de pagamento e realiza pagamento
+    fronteira -> controller : informacoesPagamento(formaPagamento, pagamento)
+    controller -> Plano : informacoesPagamento(formaPagamento, pagamento)
+    Plano -> Pagamento : efetuarPagamento(formaPagamento, pagamento)
+    Pagamento -> Pagamento : processarPagamento(formaPagamento)
+    Pagamento --> Plano : response "Pagamento efetuado"
+    Plano -> Plano : afiliarRestaurante(restaurante, data, hora)
     deactivate Pagamento
-    alt Pagamento_Recusado
-        controller --> fronteira : throws exception "Pagamento recusado"
-        fronteira -> fronteira : TelaDeErro(msgErro : exception)
-    end
+    Plano --> controller : response "Pagamento efetuado"
+    deactivate Plano
     controller --> fronteira : response "Pagamento concluido com sucesso"
-    controller -> class_restaurante : afiliarPlano(plano : Plano, data : datetime, hora : datetime)
+    controller -> class_restaurante : afiliarPlano(plano, data, hora)
     activate class_restaurante
     class_restaurante --> controller : response "Plano afiliado com sucesso"
     deactivate class_restaurante
 
-    controller -> Plano : afiliarNovoRestaurante(restaurante : Restaurante, data : datetime, hora : datetime)
-    Plano --> controller : response "Plano afiliado ao restaurante"
-    deactivate Plano
-
     controller --> fronteira : responde "Plano contratado com sucesso"
     deactivate controller
-    fronteira -> fronteira : TelaDePlanoContratado()
 
 @enduml
