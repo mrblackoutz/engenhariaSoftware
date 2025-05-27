@@ -10,9 +10,8 @@
     participant Pagamento    
     participant Mesa
 
-    ator_cliente -> fronteira : Busca por restaurantes disponiveis
+    ator_cliente -> fronteira : Busca por restaurantes por região e tipo
     activate fronteira
-    ator_cliente -> fronteira : Informa região e tipo de restaurante
     
     fronteira -> controller : buscarRestaurantes(regiao: string, tipo: string)
     activate controller
