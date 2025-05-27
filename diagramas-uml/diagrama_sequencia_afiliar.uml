@@ -30,8 +30,8 @@
     activate Tokenizer
     Tokenizer --> Cliente : token
     Cliente -> Cliente : enviaNotificacaoToken(token)
-    Cliente --> controler : token
-    controler --> fronteira : token
+    Cliente --> controler : response "Token enviado"
+    controler --> fronteira : response "Token enviado"
     ator_cliente -> fronteira : Insere token
     fronteira -> controler : validarToken(tokenInserido)
     controler -> Cliente : validarTokenConta(tokenInserido)
