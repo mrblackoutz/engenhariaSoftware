@@ -4,35 +4,32 @@
     control ControladorCancelarReserva as controller <<control>>
     collections "reservas: Reserva" as lista_reservas
     participant Reserva
+    participant Cliente
     participant Restaurante
     participant BookingMesas as book
     participant Mesa
 
     ator_cliente -> fronteira : Consulta reservas agendadas
     activate fronteira
-    fronteira -> controller : buscarReservasAgendadas(cliente : Cliente)
+    fronteira -> controller : buscarReservasAgendadas(cliente)
     activate controller
-    controller -> lista_reservas : getReservasAtivas(cliente : Cliente)
+    controller -> lista_reservas : getReservasAtivas(cliente)
     activate lista_reservas
-    lista_reservas --> controller : ReservasAtivasCliente : List<Reserva>
+    lista_reservas --> controller : ReservasAtivasCliente
     deactivate lista_reservas
-    alt Nenhuma_reserva_ativa
-        controller --> fronteira : response "Nenhuma reserva ativa encontrada para esse cliente"
-        fronteira -> fronteira : TelaNenhumaReservaAtiva()
-    end
     controller --> fronteira : ReservasAtivasCliente : List<Reserva>
-    fronteira --> fronteira : ListagemReservasAtivas(ReservasAtivasCliente: List<Reserva>)
+    
     ator_cliente -> fronteira : Seleciona reserva que deseja cancelar
-    fronteira -> controller : cancelarReserva(reserva : Reserva)
-    controller -> lista_reservas: cancelarReserva(reserva : Reserva)
+    fronteira -> controller : cancelarReserva(reserva)
+    controller -> lista_reservas: cancelarReserva(reserva)
     activate lista_reservas
     lista_reservas -> Reserva : cancelar()
     activate Reserva
-    Reserva -> Restaurante : liberarMesa(mesa : Mesa, data : datetime, hora : datetime)
+    Reserva -> Restaurante : liberarMesa(mesa, data, hora)
     activate Restaurante
-    Restaurante -> book : liberarMesa(mesa : Mesa, data : datetime, hora : datetime)
+    Restaurante -> book : liberarMesa(mesa, data, hora)
     activate book
-    book -> Mesa : liberar(data : datetime, hora : datetime)
+    book -> Mesa : liberar(data, hora)
     activate Mesa
     Mesa --> book : response "Mesa liberada"
     deactivate Mesa
@@ -41,12 +38,16 @@
     Restaurante --> Reserva : response "Mesa liberada"
     deactivate Restaurante
     Reserva -> Reserva : atualizarStatus(status="Cancelada")
+    Reserva -> Cliente : informaCancelamento()
+    activate Cliente
+    Cliente -> Cliente : notificaCancelamento(email)
+    Cliente --> Reserva : response "Notificação enviada"
+    deactivate Cliente
     Reserva --> lista_reservas : response "Reserva cancelada"
     deactivate Reserva
     lista_reservas --> controller : response "Reserva cancelada"
     deactivate lista_reservas
     controller --> fronteira : response "Cancelamento concluído"
     deactivate controller
-    fronteira -> fronteira : TelaConfirmacaoCancelamento(reservaCancelada : Reserva)
 
 @enduml
