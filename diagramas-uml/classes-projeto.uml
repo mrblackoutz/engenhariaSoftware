@@ -127,6 +127,12 @@ class Planos {
     + getDisponiveis(): List<Plano>
 }
 
+class Tokenizer {
+    +gerarToken(): String
+    +validarToken(token: String): boolean
+    +descartarToken(token: String): void
+}
+
 class Controlador {
     - usuarioLogado: Usuario
     - horario: datetime
@@ -200,6 +206,7 @@ Plano "*" --> "1" Pagamento : éCobradaPor
 ControladorAfiliar --|> Controlador
 ControladorAfiliar --> Clientes
 ControladorAfiliar --> Cliente
+ControladorAfiliar --> Tokenizer
 
 ControladorFazReserva --|> Controlador
 ControladorFazReserva --> Reserva
