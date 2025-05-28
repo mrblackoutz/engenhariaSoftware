@@ -17,10 +17,9 @@
     lista_reservas --> controller : reservasPendentes
     deactivate lista_reservas
     controller --> fronteira : reservasPendentes
-    ator_restaurante -> fronteira : Seleciona reserva 
     
     alt Restaurante aprova a reserva
-        ator_restaurante -> fronteira : Aprova reserva selecionada
+        ator_restaurante -> fronteira : Aprova uma reserva
         fronteira -> controller : reservaAprovada(reserva)
         controller -> Reserva : atualizaStatus(statusNovo = "Aprovada")
         activate Reserva
@@ -35,7 +34,7 @@
     end
 
     alt Restaurante recusa a reserva
-        ator_restaurante -> fronteira : Recusa reserva selecionada
+        ator_restaurante -> fronteira : Recusa uma reserva
         fronteira -> controller : reservaRecusada(reserva)
         controller -> Reserva : atualizaStatus(statusNovo)
         activate Reserva
@@ -61,7 +60,6 @@
         end
 
         controller --> fronteira : response "Reserva recusada com sucesso"
-        fronteira -> fronteira : msgReservaRecusada()
     end
 
 @enduml
