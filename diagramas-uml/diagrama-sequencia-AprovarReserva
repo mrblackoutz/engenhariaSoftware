@@ -8,7 +8,7 @@
     participant Pagamento
     participant Cliente
 
-    ator_restaurante -> fronteira : Consulta reservas pendentes de aprovação
+    ator_restaurante -> fronteira : Consulta reservas pendentes de aprovação(restaurante)
     activate fronteira
     fronteira -> controller : buscarReservasPendentes(restaurante)
     activate controller
@@ -19,7 +19,7 @@
     controller --> fronteira : reservasPendentes
     
     alt Restaurante aprova a reserva
-        ator_restaurante -> fronteira : Aprova uma reserva
+        ator_restaurante -> fronteira : Aprova uma reserva(reserva)
         fronteira -> controller : reservaAprovada(reserva)
         controller -> Reserva : atualizaStatus(statusNovo = "Aprovada")
         activate Reserva
@@ -34,7 +34,7 @@
     end
 
     alt Restaurante recusa a reserva
-        ator_restaurante -> fronteira : Recusa uma reserva
+        ator_restaurante -> fronteira : Recusa uma reserva(reserva)
         fronteira -> controller : reservaRecusada(reserva)
         controller -> Reserva : atualizaStatus(statusNovo)
         activate Reserva
