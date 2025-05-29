@@ -7,6 +7,7 @@
     collections "clientes : Cliente" as lista_clientes
     participant Cliente
     participant Tokenizer
+    participant Notificador
     participant TermosDeUso as class_termo
  
     ator_cliente -> fronteira : Informa nome, CPF, email, senha e preferências
@@ -29,13 +30,18 @@
     Cliente -> Tokenizer : gerarToken()
     activate Tokenizer
     Tokenizer --> Cliente : token
-    Cliente -> Cliente : enviaNotificacaoToken(token)
+    Cliente -> Notificador : enviaNotificacaoToken(token)
+    activate Notificador
+    Notificador --> Cliente : response "Token enviado"
+    deactivate Notificador
     Cliente --> controler : response "Token enviado"
     controler --> fronteira : response "Token enviado"
     ator_cliente -> fronteira : Insere token
     fronteira -> controler : validarToken(tokenInserido)
     controler -> Cliente : validarTokenConta(tokenInserido)
-    Cliente -> Cliente : validarToken(tokenInserido)
+    Cliente -> Tokenizer : validarToken(tokenInserido)
+    activate Tokenizer
+    Tokenizer --> Cliente : response "Token validado"
     Cliente -> Tokenizer : descartarToken()
     Tokenizer --> Cliente : response "Token descartado"
     deactivate Tokenizer
