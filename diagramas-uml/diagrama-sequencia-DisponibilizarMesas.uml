@@ -9,25 +9,24 @@
     participant Salao
      
 
-    ator_restaurante -> fronteira : Seleciona opção de cadastrar mesa
+    ator_restaurante -> fronteira : Cadastra nova mesa (restaurante, salao, nroMesa, qtdCadeiras)
     activate fronteira
-    ator_restaurante -> fronteira : Informa salão, posição no salão e número da mesa
-    fronteira -> controller :  disponibilizarMesa(restaurante : Restaurante, salao : Salao, nroMesa : int, coordenada_x : int, coordenada_y : int)
+    fronteira -> controller :  disponibilizarMesa(restaurante, salao, nroMesa, qtdCadeiras)
     activate controller
 
-    controller -> class_restaurante : cadastrarMesa(salao : Salao, nroMesa : int, coordenada_x : int, coordenada_y : int)
+    controller -> class_restaurante : cadastrarMesa(salao, nroMesa, qtdCadeiras)
     activate class_restaurante
 
-    class_restaurante -> book : criarNovaMesa(salao : Salao, nroMesa : int)
+    class_restaurante -> book : criarNovaMesa(salao, nroMesa, qtdCadeiras)
     activate book
-    book -> Mesa **: create(nroMesa : int)
+    book -> Mesa **: create(nroMesa)
     activate Mesa
     Mesa --> book : response "Mesa criada"
     deactivate Mesa
     book --> class_restaurante : response "Mesa criada"
     deactivate book
 
-    class_restaurante -> Salao : vincularMesa(mesaNova : Mesa, coordenada_x : int, coordenada_y : int)
+    class_restaurante -> Salao : vincularMesa(mesaNova)
     activate Salao
     Salao --> class_restaurante : response "Mesa cadastrada"
     deactivate Salao
@@ -36,8 +35,8 @@
     deactivate class_restaurante
 
     controller --> fronteira : response "Sucesso no cadastramento da mesa"
-    deactivate controller
 
-    fronteira -> fronteira : TelaDeMesaCadastrada()
+    deactivate controller
+    deactivate fronteira
 
 @enduml
