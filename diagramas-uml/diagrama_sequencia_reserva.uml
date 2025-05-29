@@ -5,6 +5,7 @@
     boundary realizarReservaGUI as fronteira <<boundary>>
     control ControladorRealizarReserva as controller <<control>>
     collections "restaurantes : Restaurante" as list_restaurante
+    collections "reservas : Reserva" as list_reserva
     participant Reserva
     participant Restaurante
     collections "BookingMesas" as book
@@ -35,22 +36,29 @@
     controller --> fronteira : MesasLivres
     ator_cliente -> fronteira : Seleciona mesa desejada
     fronteira -> controller : reservarMesa(mesaDesejada, cliente)
-    controller -> Reserva : reservarMesa(restaurante, mesa, data, cliente)
+    controller -> list_reserva : reservarMesa(restaurante, mesa, data, cliente)
+    activate list_reserva
+    list_reserva -> Reserva **: reservarMesa(restaurante, mesa, data, cliente)
     activate Reserva
+
     alt Restaurante_Exige_Taxa_De_Reserva
         Reserva -> Pagamento **: create(restaurante, cliente, valor)
         activate Pagamento
-        Reserva -> controller : PagamentoExigido
+        Reserva -> list_reserva : PagamentoExigido
+        list_reserva --> controller : PagamentoExigido
         controller -> fronteira : PagamentoExigido
         ator_cliente -> fronteira : Seleciona forma de pagamento e realiza pagamento
         fronteira -> controller : informacoesPagamento(formaPagamento, pagamento)
-        controller -> Reserva : informacoesPagamento(formaPagamento, pagamento)
+        controller -> list_reserva : informacoesPagamento(formaPagamento, pagamento)
+        list_reserva -> Reserva : informacoesPagamento(formaPagamento, pagamento)
         Reserva -> Pagamento : processarPagamento(formaPagamento)
         Pagamento --> Reserva : pagamentoConcluido
         deactivate Pagamento
-        Reserva --> controller : pagamentoConcluido
+        Reserva --> list_reserva : pagamentoConcluido
+        list_reserva --> controller : response "Pagamento concluído"
         controller --> fronteira : response "Pagamento aprovado" 
     end
+
     Reserva -> Restaurante : reservarMesa(mesa, data, hora, cliente)
     activate Restaurante
     Restaurante -> book : indisponibilizarMesa(mesa, data, hora)
@@ -63,8 +71,10 @@
     deactivate book
     Restaurante --> Reserva : response "Sucesso ao reservar mesa"
     deactivate Restaurante
-    Reserva --> controller : response "Reserva finalizada"
+    Reserva --> list_reserva: response "Reserva concluída"
     deactivate Reserva
-    controller --> fronteira : response "Reserva finalizada com sucesso"
+    list_reserva --> controller : response "Reserva concluída"
+    deactivate list_reserva
+    controller --> fronteira : response "Reserva concluída com sucesso"
 
 @enduml
