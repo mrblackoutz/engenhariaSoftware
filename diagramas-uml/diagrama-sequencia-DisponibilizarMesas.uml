@@ -9,15 +9,15 @@
     participant Salao
      
 
-    ator_restaurante -> fronteira : Cadastra nova mesa (restaurante, salao, nroMesa, qtdCadeiras)
+    ator_restaurante -> fronteira : Cadastra nova mesa (restaurante, salao, nroMesa, capacidade_cadeira)
     activate fronteira
-    fronteira -> controller :  disponibilizarMesa(restaurante, salao, nroMesa, qtdCadeiras)
+    fronteira -> controller :  disponibilizarMesa(restaurante, salao, nroMesa, capacidade_cadeira)
     activate controller
 
-    controller -> class_restaurante : cadastrarMesa(salao, nroMesa, qtdCadeiras)
+    controller -> class_restaurante : cadastrarMesa(salao, nroMesa, capacidade_cadeira)
     activate class_restaurante
 
-    class_restaurante -> book : criarNovaMesa(salao, nroMesa, qtdCadeiras)
+    class_restaurante -> book : criarNovaMesa(salao, nroMesa, capacidade_cadeira)
     activate book
     book -> Mesa **: create(nroMesa)
     activate Mesa
