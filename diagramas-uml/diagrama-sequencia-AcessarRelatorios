@@ -1,47 +1,40 @@
 @startuml
+actor Restaurante as R
 
-    actor Restaurante as ator_restaurante
-    boundary AcessarRelatorioGUI as fronteira <<boundary>>
-    control ControladorAcessarRelatorio as controller <<control>>
-    collections "relatorios : Relatorio" as lista_relatorios
-    participant Relatorio
-    collections "reservas : Reserva" as lista_reservas
-    collections "clientes : Cliente" as lista_clientes
+boundary "AcessarRelatorioGUI" as GUI
+control "ControladorAcessarRelatorio" as Cntrl
+participant "Relatorio" as Rel
+collections "Relatorios : Relatorio" as RelatoriosCol
+collections "reservas : Reserva" as ReservasCol
+collections "clientes : Cliente" as ClientesCol
 
-    ator_restaurante -> fronteira : Acessa central de relatorios
-    activate fronteira
-    ator_restaurante -> fronteira : Informa data de início e de fim do filtro de informações
-    fronteira -> controller : buscaRelatoriosDisponiveis(restaurante : Restaurante, data_inicio : datetime, data_fim : datetime)
-    activate controller
-    controller -> lista_relatorios : buscaRelatoriosDisponiveis(restaurante : Restaurante, plano = Restaurante.planoAssociado : Plano)
-    activate lista_relatorios
-    lista_relatorios --> controller : relatoriosDisponiveis : List<Relatorio>
-    deactivate lista_relatorios
+R -> GUI : Busca por relatorios disponiveis(data_inicio, data_fim)
+activate GUI
+GUI -> Cntrl : buscaRelatoriosDisponiveis(restaurante, data_inicio, data_fim)
+activate Cntrl
+Cntrl -> RelatoriosCol : buscaRelatoriosDisponiveis(restaurante_plano)
+activate RelatoriosCol
+RelatoriosCol --> Cntrl : relatoriosDisponiveis
+deactivate RelatoriosCol
+Cntrl --> GUI : relatoriosDisponiveis
+R -> GUI : Seleciona relatorio(relatorio)
 
-    alt Nenhum relatorio disponivel
-        controller --> fronteira : response "Nenhum relatorio disponivel"
-        fronteira -> fronteira : TelaNenhumRelatorioDisponivel()
-    end 
-
-    controller --> fronteira : relatoriosDisponiveis : List<Relatorio>
-    fronteira -> fronteira : ListagemRelatorios(relatorios = relatoriosDisponiveis : List<Relatorio>)
-    
-    ator_restaurante -> fronteira : Seleciona relatorio
-    fronteira -> controller : acessaRelatorio(relatorio : Relatorio)
-    controller -> Relatorio : getInformacoes(data_inicio : datetime, data_fim : datetime)
-    activate Relatorio
-    Relatorio -> lista_reservas : filterReservas(data_inicio : datetime, data_fim : datetime)
-    activate lista_reservas
-    lista_reservas --> Relatorio : reservasPeriodo : List <Reserva>
-    deactivate lista_reservas
-
-    Relatorio -> lista_clientes : filterClientes(restaurante : Restaurante, data_inicio : datetime, data_fim : datetime)
-    activate lista_clientes
-    lista_clientes --> Relatorio : clientesPeriodo : List<Clientes>
-    deactivate lista_clientes
-
-    Relatorio --> controller : (reservasPeriodo : List <Reserva>, clientesPeriodo : List<Clientes>)
-    deactivate Relatorio
-    controller --> fronteira : (reservasPeriodo : List <Reserva>, clientesPeriodo : List<Clientes>)
+GUI -> Cntrl : acessarRelatorio(relatorio)
+Cntrl -> Rel : getInformacoes(data_inicio, data_fim)
+activate Rel
+Rel -> ReservasCol : filterReservas(data_inicio, data_fim)
+activate ReservasCol
+ReservasCol --> Rel : reservasPeriodo
+deactivate ReservasCol
+Rel -> ClientesCol : filterClientes(restaurante, data_inicio, data_fim)
+activate ClientesCol
+ClientesCol --> Rel : clientesPeriodo
+deactivate ClientesCol
+Rel --> Cntrl : (reservasPeriodo, clientesPeriodo)
+deactivate Rel
+Cntrl --> GUI : (reservasPeriodo, clientesPeriodo)
+deactivate Cntrl
+GUI --> R : (reservasPeriodo, clientesPeriodo)
+deactivate GUI
 
 @enduml
