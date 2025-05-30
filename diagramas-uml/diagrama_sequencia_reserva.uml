@@ -1,4 +1,3 @@
-
 @startuml
 
     actor Cliente as ator_cliente
@@ -12,7 +11,7 @@
     participant Pagamento    
     participant Mesa
 
-    ator_cliente -> fronteira : Busca por restaurantes por região e tipo
+    ator_cliente -> fronteira : Busca por restaurantes por região e tipo (regiao, tipo)
     activate fronteira
     
     fronteira -> controller : buscarRestaurantes(regiao, tipo)
@@ -23,7 +22,7 @@
     deactivate list_restaurante
 
     controller --> fronteira : listaRestaurantesEncontrados
-    ator_cliente -> fronteira : Seleciona restaurante, data, hora e quantidade de pessoas
+    ator_cliente -> fronteira : Seleciona restaurante, data, hora e quantidade de pessoas (restaurante, data, hora, qtdPessoas)
     fronteira -> controller : dadosReserva(restaurante, data, hora, qtdPessoas)
     controller -> Restaurante : buscarMesasDisponiveis(data, hora, qtdPessoas)
     activate Restaurante
@@ -34,7 +33,7 @@
     Restaurante --> controller : MesasLivres
     deactivate Restaurante
     controller --> fronteira : MesasLivres
-    ator_cliente -> fronteira : Seleciona mesa desejada
+    ator_cliente -> fronteira : Seleciona mesa desejada(mesaDesejada)
     fronteira -> controller : reservarMesa(mesaDesejada, cliente)
     controller -> list_reserva : reservarMesa(restaurante, mesa, data, cliente)
     activate list_reserva
@@ -47,7 +46,7 @@
         Reserva -> list_reserva : PagamentoExigido
         list_reserva --> controller : PagamentoExigido
         controller -> fronteira : PagamentoExigido
-        ator_cliente -> fronteira : Seleciona forma de pagamento e realiza pagamento
+        ator_cliente -> fronteira : Realiza pagamento (formaPagamento, pagamento)
         fronteira -> controller : informacoesPagamento(formaPagamento, pagamento)
         controller -> list_reserva : informacoesPagamento(formaPagamento, pagamento)
         list_reserva -> Reserva : informacoesPagamento(formaPagamento, pagamento)
