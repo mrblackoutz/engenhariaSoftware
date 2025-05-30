@@ -9,7 +9,7 @@
     participant BookingMesas as book
     participant Mesa
 
-    ator_cliente -> fronteira : Consulta reservas agendadas
+    ator_cliente -> fronteira : Consulta reservas agendadas (cliente)
     activate fronteira
     fronteira -> controller : buscarReservasAgendadas(cliente)
     activate controller
@@ -19,7 +19,7 @@
     deactivate lista_reservas
     controller --> fronteira : ReservasAtivasCliente : List<Reserva>
     
-    ator_cliente -> fronteira : Seleciona reserva que deseja cancelar
+    ator_cliente -> fronteira : Seleciona reserva que deseja cancelar (reserva)
     fronteira -> controller : cancelarReserva(reserva)
     controller -> lista_reservas: cancelarReserva(reserva)
     activate lista_reservas
