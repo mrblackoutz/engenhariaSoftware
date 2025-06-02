@@ -1,54 +1,137 @@
 @startuml
-title Diagrama de Componentes - MesaFácil (Corrigido)
+' Aumenta ainda mais o espaçamento horizontal e vertical
+skinparam nodesep 150
+skinparam ranksep 200
 
-package "Componentes de Negócio" {
+skinparam componentStyle rect
+skinparam linetype ortho
 
-  [ComponenteUsuario] as CUsuario
-  [ComponenteReserva] as CReserva
-  [ComponenteRestaurante] as CRestaurante
-  [ComponenteNotificacao] as CNotificacao
-  [ComponentePagamento] as CPagamento
-  [ComponenteAvaliacao] as CAvaliacao
-  [ComponenteTermos] as CTermos
+' Cores para blocos
+skinparam component {
+    BackgroundColor<<boundary>> #FFEECC
+    BackgroundColor<<controller>> #CCE5FF
+    BackgroundColor<<collection>> #E6CCFF
+    BackgroundColor<<singleton>> #CCFFCC
+    BackgroundColor<<component>> #FFFFCC
 }
 
-package "Interfaces" {
-  [IUsuario]
-  [IReserva]
-  [IRestaurante]
-  [INotificacao]
-  [IPagamento]
-  [IAvaliacao]
-  [ITermos]
+' ————— Front-end e componentes —————
+component "Web UI (Front-end)" <<boundary>> as UI
+component "Entidades de Domínio" <<component>> as Entities
+component "Serviços Gerais" <<component>> as Services
+
+' ————— Controladores —————
+package "Controladores" {
+  component "CtrlAfiliar" <<controller>> as C_Afiliar
+  component "CtrlReserva" <<controller>> as C_Reserva
+  component "CtrlCancelamento" <<controller>> as C_Cancelar
+  component "CtrlPlanos" <<controller>> as C_Planos
+  component "CtrlMesas" <<controller>> as C_Mesas
+  component "CtrlAprovacao" <<controller>> as C_Aprovar
+  component "CtrlRelatorios" <<controller>> as C_Relatorios
 }
 
-' Interfaces oferecidas
-CUsuario -[hidden]-> IUsuario
-CUsuario --> IUsuario : <<interface>> fornece
-CReserva --> IReserva : <<interface>> fornece
-CRestaurante --> IRestaurante : <<interface>> fornece
-CNotificacao --> INotificacao : <<interface>> fornece
-CPagamento --> IPagamento : <<interface>> fornece
-CAvaliacao --> IAvaliacao : <<interface>> fornece
-CTermos --> ITermos : <<interface>> fornece
+' ————— Collections —————
+package "Collections (Repositories)" {
+  component "ClienteCollection" <<collection>> as Coll_Cliente
+  component "RestauranteCollection" <<collection>> as Coll_Restaurante
+  component "BookingCollection" <<collection>> as Coll_Booking
+  component "BookingMesaCollection" <<collection>> as Coll_BookingMesa
+  component "MesaCollection" <<collection>> as Coll_Mesa
+  component "SalaoCollection" <<collection>> as Coll_Salao
+  component "PlanoCollection" <<collection>> as Coll_Plano
+  component "AvaliacaoCollection" <<collection>> as Coll_Avaliacao
+  component "TermoUsoCollection" <<collection>> as Coll_Termo
+  component "LogOperacaoCollection" <<collection>> as Coll_Log
+}
 
-' Dependências entre componentes
-CReserva ..> CUsuario : usa
-CReserva ..> CRestaurante : usa
-CReserva ..> CNotificacao : usa
-CReserva ..> CPagamento : usa
-CReserva ..> CTermos : valida
+' ————— Serviços Genéricos —————
+package "Serviços Genéricos" {
+  component "NotificadorService" <<singleton>> as S_Notificador
+  component "QRCodeService" <<singleton>> as S_QRCode
+  component "RelatorioService" <<singleton>> as S_Relatorio
+  component "PagamentoService" <<singleton>> as S_Pagamento
+}
 
-CAvaliacao ..> CReserva : refere-se a
-CAvaliacao ..> CUsuario : feita por
-CAvaliacao ..> CRestaurante : feita para
+database "Banco de Dados" as DB
+component "Gateway de Pagamento\n(Externo)" <<component>> as PaymentGateway
+component "Servidor de Email\n(Externo)" <<component>> as EmailService
 
-CNotificacao ..> CUsuario : envia para
-CNotificacao ..> CReserva : sobre reserva
+' ————— Suite de Testes —————
+component "Test Suite\n(Automated)" <<boundary>> as Testes
 
-CPagamento ..> CUsuario : pagamento por
-CPagamento ..> CReserva : pagamento de
+' ————— Fluxos principais (UI → Controladores) —————
+UI --> C_Afiliar : <<consume>>
+UI --> C_Reserva : <<consume>>
+UI --> C_Cancelar : <<consume>>
+UI --> C_Planos : <<consume>>
+UI --> C_Mesas : <<consume>>
+UI --> C_Aprovar : <<consume>>
+UI --> C_Relatorios : <<consume>>
 
-CTermos ..> CUsuario : aceito por
-CTermos ..> CPagamento : vincula termo
+' ————— Fluxos de Testes (Testes → Controladores) —————
+Testes --> C_Afiliar : <<test>>
+Testes --> C_Reserva : <<test>>
+Testes --> C_Cancelar : <<test>>
+Testes --> C_Planos : <<test>>
+Testes --> C_Mesas : <<test>>
+Testes --> C_Aprovar : <<test>>
+Testes --> C_Relatorios : <<test>>
+
+' ————— Consumos entre controladores e collections/serviços —————
+C_Afiliar --> Coll_Cliente
+C_Afiliar --> Coll_Termo
+C_Afiliar --> S_Notificador
+
+C_Reserva --> Coll_Restaurante
+C_Reserva --> Coll_Mesa
+C_Reserva --> Coll_Booking
+C_Reserva --> Coll_BookingMesa
+C_Reserva --> S_Pagamento
+C_Reserva --> S_QRCode
+C_Reserva --> S_Notificador
+
+C_Cancelar --> Coll_Booking
+C_Cancelar --> Coll_BookingMesa
+C_Cancelar --> Coll_Mesa
+C_Cancelar --> S_Pagamento
+C_Cancelar --> S_Notificador
+C_Cancelar --> Coll_Log
+
+C_Planos --> Coll_Plano
+C_Planos --> Coll_Termo
+C_Planos --> Coll_Log
+C_Planos --> S_Pagamento
+C_Planos --> S_Notificador
+C_Planos --> Coll_Restaurante
+
+C_Mesas --> Coll_Salao
+C_Mesas --> Coll_Mesa
+C_Mesas --> Coll_Log
+
+C_Aprovar --> Coll_Booking
+C_Aprovar --> Coll_BookingMesa
+C_Aprovar --> S_QRCode
+C_Aprovar --> S_Notificador
+
+C_Relatorios --> Coll_Booking
+C_Relatorios --> Coll_Avaliacao
+C_Relatorios --> S_Relatorio
+C_Relatorios --> Coll_Log
+
+' ————— Persistência —————
+Coll_Cliente --> DB
+Coll_Termo --> DB
+Coll_Salao --> DB
+Coll_Plano --> DB
+Coll_Log --> DB
+Coll_Avaliacao --> DB
+Coll_Mesa --> DB
+Coll_Restaurante --> DB
+Coll_Booking --> DB
+Coll_BookingMesa --> DB
+
+' ————— Serviços externos —————
+S_Pagamento --> PaymentGateway
+S_Notificador --> EmailService
 @enduml
