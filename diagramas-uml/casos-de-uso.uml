@@ -1,0 +1,37 @@
+
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Cliente
+actor Restaurante
+actor Banco
+
+rectangle "MesaFácil" {
+  
+  (Se afiliar) as A1
+  (Realizar reserva) as A2
+  (Cancelar reserva) as A3
+  (Contratar plano) as A5
+  (Disponibilizar mesas) as B1
+  (Aprovar reserva) as B2
+  (Consultar desempenho) as B3
+  (Processar pagamento) as P1
+  
+  Cliente --> A1
+  Cliente --> A2
+  Cliente --> A3
+  Cliente --> A5
+
+  Restaurante --> B1
+  Restaurante --> B2
+  Restaurante --> B3
+
+  A2 --> P1 : <<include>>
+  A3 --> P1 : <<include>>
+  A5 --> P1 : <<include>>
+
+  Banco --> P1
+}
+@enduml

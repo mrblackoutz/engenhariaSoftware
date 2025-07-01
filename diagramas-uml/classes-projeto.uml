@@ -1,0 +1,238 @@
+@startuml
+title Diagrama de Classes de Projeto - MesaFácil
+
+skinparam linetype ortho
+skinparam padding 0
+scale 0.8
+
+class Usuario {
+    - id: int
+    - email: string
+    - login: string
+    - senha: string
+    - telefone: string
+    + validarLogin(login: string, senha: string): boolean
+    + enviarEmail(remetente: string, titulo: string, corpo: string): void
+    + enviarSMS(remetente: string, texto: string): void
+}
+
+class Cliente {
+    - cpf: string
+    - preferencias: string
+    - nome: string
+    + registrarReserva(reserva: Reserva): void
+    + avaliarReserva(reserva: Reserva, nota: int, comentario: string): void
+}
+
+class Clientes {
+    - listaClientes: List<Cliente>
+    + buscarCliente(cliente: Cliente): Cliente
+    + adicionarCliente(cliente: Cliente): void
+}
+
+class StaffRestaurante {
+    - nome: string
+    - perfilDeAcesso: List<string>
+    + validarAcesso(pagina: string): boolean
+    + aprovarReserva(reserva: Reserva): void
+}
+
+class Restaurante {
+    - cnpj: string
+    - razaoSocial: string
+    - nomeFantasia: string
+    - endereco: string
+    - horarioFuncionamento: string
+    - tempoConfirmacao: int
+    - fotos: List<string>
+    - cardapio: string
+    - avaliacaoMedia: float
+    + disponibilizarMesas(listaSaloes: List<Salao>): void
+    + atualizarAvaliacao(novaAvaliacao: float): void
+    + notificarCancelamento(reserva: Reserva): void
+}
+
+class BookingMesas {
+    - saloes: List<Salao>
+    + disponibilizarSalao(salao: Salao): void
+    + listarMesasDisponiveis(dataHora: datetime): List<Mesa>
+    + atualizarDisponibilidade(): boolean
+}
+
+class Salao {
+    - id: int
+    - nome: string
+    - tipo: string
+    - caracteristicas: string
+    + adicionarMesa(mesa: Mesa): void
+    + listarMesas(): List<Mesa>
+}
+
+class Mesa {
+    - id: int
+    - numero: int
+    - capacidade: int
+    - status: string
+    + reservar(dataHora: datetime, duracao: float): void
+    + liberar(data: datetime, hora: time): void
+}
+
+class Reserva {
+    - id: int
+    - dataHora: datetime
+    - quantidadePessoas: int
+    - status: string
+    - valorPago: double
+    - mesaReservada: Mesa
+    - donoReserva: Cliente
+    + confirmar(): void
+    + visualizar(): void
+    + cancelar(): void
+    + atualizarStatus(novoStatus: string): boolean
+    + buscarInformacoes(): Reserva
+}
+
+class Reservas {
+    - reservasAprovadas: List<Reserva>
+    + buscarReserva(id: int): Reserva
+}
+
+class Avaliacao {
+    - id: int
+    - nota: int
+    - comentario: string
+    - dataHora: datetime
+    + gravar(): void
+}
+
+class Pagamento {
+    - id: int
+    - valor: double
+    - status: string
+    - dataHora: datetime
+    + processar(): boolean
+    + consultarStatus(): string
+    + estornar(): boolean
+}
+
+class Plano {
+    - id: int
+    - nome: string
+    - preco: float
+    - disponivel: boolean
+}
+
+class Planos {
+    - lista: List<Plano>
+    + getDisponiveis(): List<Plano>
+}
+
+class Tokenizer {
+    +gerarToken(): String
+    +validarToken(token: String): boolean
+    +descartarToken(token: String): void
+}
+
+class Controlador {
+    - usuarioLogado: Usuario
+    - horario: datetime
+    - dispositivo: string
+}
+
+class ControladorAfiliar {
+    + obterCliente(email: string, senha: string): Cliente
+    + efetuarLogin(): boolean
+}
+
+class ControladorFazReserva {
+    + consultarMesas(restaurante: Restaurante, data: datetime, horario: datetime): List<Mesa>
+    + processarPagamento(): boolean
+    + criarReserva(restaurante: Restaurante, data: datetime, mesa: Mesa): Reserva
+}
+
+class ControladorCancelarReserva {
+    + buscarReserva(id: int): Reserva
+    + verificarPagamento(reserva: Reserva): boolean
+}
+
+class ControladorContratarPlanos {
+    + associarPlano(plano: Plano, restaurante: Restaurante): boolean
+}
+
+class ControladorDisponibilizarMesas {
+    + atualizarDisponibilidade(data: datetime, horario: datetime): boolean
+    + ativarSalao(salaoId: int): Salao
+}
+
+class ControladorAprovarReserva {
+    + buscar(id: int): Reserva
+    + recusarReserva(): boolean
+}
+
+class RelatorioController {
+    + gerar(tipo: TipoRelatorio, periodo: datetime): Relatorio
+}
+
+class Relatorio {
+    - id: int
+    - dataInicio: datetime
+    - dataFim: datetime
+    - planos: List<Plano>
+    - restaurante: Restaurante
+}
+
+' ==== Relacionamentos ====
+
+Usuario <|-- Cliente
+Usuario <|-- StaffRestaurante
+Clientes "1" --> "1..*" Cliente
+Cliente "1" --> "0..*" Reserva : realiza
+Cliente "1" --> "0..*" Pagamento : efetua
+Reserva "1" --> "1" Mesa : utiliza
+Reserva "1" --> "1" Pagamento : gera
+Reserva "0..1" --> "1" Avaliacao : avalia
+Restaurante "1" --> "0..*" Reserva : gerencia
+Restaurante "1" --> "1" BookingMesas : possui
+Restaurante "0..*" --> "1" Plano : adere
+Restaurante "1" --> "*" Relatorio : acessa
+Restaurante "*" --> "1" Pagamento : recebe
+StaffRestaurante "1" --> "0..*" Reserva : aprova
+BookingMesas "1" --> "1..*" Salao : disponibiliza
+Salao "1" --> "1..*" Mesa : contém
+Planos "1" --> "1..*" Plano
+Plano "*" --> "1..*" Relatorio : baseia
+Plano "*" --> "1" Pagamento : éCobradaPor
+
+ControladorAfiliar --|> Controlador
+ControladorAfiliar --> Clientes
+ControladorAfiliar --> Cliente
+ControladorAfiliar --> Tokenizer
+
+ControladorFazReserva --|> Controlador
+ControladorFazReserva --> Reserva
+ControladorFazReserva --> BookingMesas
+
+ControladorCancelarReserva --|> Controlador
+ControladorCancelarReserva --> Reservas
+ControladorCancelarReserva --> Reserva
+ControladorCancelarReserva --> Pagamento
+
+ControladorContratarPlanos --|> Controlador
+ControladorContratarPlanos --> Planos
+ControladorContratarPlanos --> Restaurante
+ControladorContratarPlanos --> Pagamento
+
+ControladorDisponibilizarMesas --|> Controlador
+ControladorDisponibilizarMesas --> BookingMesas
+ControladorDisponibilizarMesas --> Salao
+
+ControladorAprovarReserva --|> Controlador
+ControladorAprovarReserva --> Reservas
+ControladorAprovarReserva --> Reserva
+ControladorAprovarReserva --> Pagamento
+ControladorAprovarReserva --> Cliente
+
+RelatorioController --|> Controlador
+RelatorioController --> Relatorio
+
+@enduml

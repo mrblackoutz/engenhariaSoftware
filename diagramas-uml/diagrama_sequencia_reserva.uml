@@ -1,0 +1,79 @@
+@startuml
+
+    actor Cliente as ator_cliente
+    boundary realizarReservaGUI as fronteira <<boundary>>
+    control ControladorRealizarReserva as controller <<control>>
+    collections "restaurantes : Restaurante" as list_restaurante
+    collections "reservas : Reserva" as list_reserva
+    participant Reserva
+    participant Restaurante
+    collections "BookingMesas" as book
+    participant Pagamento    
+    participant Mesa
+
+    ator_cliente -> fronteira : Busca por restaurantes por região e tipo (regiao, tipo)
+    activate fronteira
+    
+    fronteira -> controller : buscarRestaurantes(regiao, tipo)
+    activate controller
+    controller -> list_restaurante : filtrarRestaurantes(regiao, tipo)
+    activate list_restaurante
+    list_restaurante --> controller : restaurantesEntcontrados
+    deactivate list_restaurante
+
+    controller --> fronteira : listaRestaurantesEncontrados
+    ator_cliente -> fronteira : Seleciona restaurante, data, hora e quantidade de pessoas (restaurante, data, hora, qtdPessoas)
+    fronteira -> controller : dadosReserva(restaurante, data, hora, qtdPessoas)
+    controller -> Restaurante : buscarMesasDisponiveis(data, hora, qtdPessoas)
+    activate Restaurante
+    Restaurante -> book : getMesasLivres(data, qtdPessoas)
+    activate book
+    book --> Restaurante : MesasLivres
+    deactivate book
+    Restaurante --> controller : MesasLivres
+    deactivate Restaurante
+    controller --> fronteira : MesasLivres
+    ator_cliente -> fronteira : Seleciona mesa desejada(mesaDesejada)
+    fronteira -> controller : reservarMesa(mesaDesejada, cliente)
+    controller -> list_reserva : reservarMesa(restaurante, mesa, data, cliente)
+    activate list_reserva
+    list_reserva -> Reserva **: reservarMesa(restaurante, mesa, data, cliente)
+    activate Reserva
+
+    alt Restaurante_Exige_Taxa_De_Reserva
+        Reserva -> Pagamento **: create(restaurante, cliente, valor)
+        activate Pagamento
+        Reserva -> list_reserva : PagamentoExigido
+        list_reserva --> controller : PagamentoExigido
+        controller -> fronteira : PagamentoExigido
+        ator_cliente -> fronteira : Realiza pagamento (formaPagamento, pagamento)
+        fronteira -> controller : informacoesPagamento(formaPagamento, pagamento)
+        controller -> list_reserva : informacoesPagamento(formaPagamento, pagamento)
+        list_reserva -> Reserva : informacoesPagamento(formaPagamento, pagamento)
+        Reserva -> Pagamento : processarPagamento(formaPagamento)
+        Pagamento --> Reserva : pagamentoConcluido
+        deactivate Pagamento
+        Reserva --> list_reserva : pagamentoConcluido
+        list_reserva --> controller : response "Pagamento concluído"
+        controller --> fronteira : response "Pagamento aprovado" 
+    end
+
+    Reserva -> Restaurante : reservarMesa(mesa, data, hora, cliente)
+    activate Restaurante
+    Restaurante -> book : indisponibilizarMesa(mesa, data, hora)
+    activate book
+    book -> Mesa : alterarHorarioDisponibilidade(data, hora)
+    activate Mesa
+    Mesa --> book : response "Mesa reservada"
+    deactivate Mesa
+    book --> Restaurante : response "Booking atualizado"
+    deactivate book
+    Restaurante --> Reserva : response "Sucesso ao reservar mesa"
+    deactivate Restaurante
+    Reserva --> list_reserva: response "Reserva concluída"
+    deactivate Reserva
+    list_reserva --> controller : response "Reserva concluída"
+    deactivate list_reserva
+    controller --> fronteira : response "Reserva concluída com sucesso"
+
+@enduml

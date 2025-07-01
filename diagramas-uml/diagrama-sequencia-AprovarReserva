@@ -1,0 +1,65 @@
+@startuml
+
+    actor Restaurante as ator_restaurante
+    boundary AprovarReservaGUI as fronteira <<boundary>>
+    control AprovarReservaController as controller <<control>>
+    collections "reservas : Reserva" as lista_reservas
+    participant Reserva
+    participant Pagamento
+    participant Cliente
+
+    ator_restaurante -> fronteira : Consulta reservas pendentes de aprovação(restaurante)
+    activate fronteira
+    fronteira -> controller : buscarReservasPendentes(restaurante)
+    activate controller
+    controller -> lista_reservas : buscarReservasPendentes(restaurante)
+    activate lista_reservas
+    lista_reservas --> controller : reservasPendentes
+    deactivate lista_reservas
+    controller --> fronteira : reservasPendentes
+    
+    alt Restaurante aprova a reserva
+        ator_restaurante -> fronteira : Aprova uma reserva(reserva)
+        fronteira -> controller : reservaAprovada(reserva)
+        controller -> Reserva : atualizaStatus(statusNovo = "Aprovada")
+        activate Reserva
+        Reserva -> Cliente : notificaAprovacao()
+        activate Cliente
+        Cliente -> Cliente : notificaReservaAprovada(reserva, destinatario)
+        Cliente --> Reserva : response "Notificação enviada"
+        deactivate Cliente
+        Reserva --> controller : response "Status atualizado"
+        deactivate Reserva
+        controller --> fronteira : response "Reserva aprovada com sucesso"
+    end
+
+    alt Restaurante recusa a reserva
+        ator_restaurante -> fronteira : Recusa uma reserva(reserva)
+        fronteira -> controller : reservaRecusada(reserva)
+        controller -> Reserva : atualizaStatus(statusNovo)
+        activate Reserva
+        Reserva -> Cliente : notificaRecusa()
+        activate Cliente
+        Cliente -> Cliente : notificaReservaRecusada(reserva, emailDestinatario)
+        Cliente --> Reserva : response "Notificação enviada"
+        deactivate Cliente
+        
+        alt Restaurante exige pagamento
+            Reserva -> Pagamento : extornoPagamento(cliente, restaurante)
+            activate Pagamento
+            Pagamento -> Pagamento : processaExtorno()
+            Pagamento --> Reserva : extornoRealizado
+            deactivate Pagamento
+
+            Reserva -> Cliente : notificaExtorno(pagamento)
+            activate Cliente
+            Cliente -> Cliente : notificaPagamentoExtornado(pagamento, emailDestinatario)
+            Cliente --> Reserva : response "Notificação enviada"
+            deactivate Cliente
+            Reserva --> controller : response "Extorno realizado com sucesso"
+        end
+
+        controller --> fronteira : response "Reserva recusada com sucesso"
+    end
+
+@enduml

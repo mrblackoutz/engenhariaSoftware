@@ -1,0 +1,46 @@
+@startuml
+|#lightgrey|Cliente|
+start
+:Decide fazer reserva;
+:Solicita reserva;
+
+|#lightblue|Restaurante|
+partition "Processo de Verificação" {
+  :Verifica disponibilidade;
+  if (Mesas Disponíveis?) then (sim)
+    if (Cobra Taxa?) then (sim)
+      :Solicita pagamento;
+      |Cliente|
+      :Efetua pagamento;
+      |Restaurante|
+      :Confirma pagamento;
+    else (não)
+      :Confirma reserva;
+    endif
+    
+    :Envia confirmação;
+    |Cliente|
+    :Recebe confirmação;
+  else (não)
+    |Restaurante|
+    :Informa indisponibilidade;
+    stop
+  endif
+}
+
+partition "Processo de Atendimento" {
+  |Cliente|
+  if (Comparece ao restaurante?) then (sim)
+    :Chega ao restaurante;
+    |Restaurante|
+    :Acomoda cliente;
+    :Registra ocupação da mesa;
+    stop
+  else (não)
+    |Restaurante|
+    :Libera mesa;
+    :Atualiza disponibilidade;
+    stop
+  endif
+}
+@enduml

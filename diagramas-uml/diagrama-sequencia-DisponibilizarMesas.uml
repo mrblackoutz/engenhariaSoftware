@@ -1,0 +1,42 @@
+@startuml
+
+    actor Restaurante as ator_restaurante
+    boundary DisponibilizarMesasGUI as fronteira <<boundary>>
+    control ControladorDisponibilizarMesas as controller <<control>>
+    participant Restaurante as class_restaurante
+    participant BookingMesas as book 
+    participant Mesa
+    participant Salao
+     
+
+    ator_restaurante -> fronteira : Cadastra nova mesa (restaurante, salao, nroMesa, capacidade_cadeira)
+    activate fronteira
+    fronteira -> controller :  disponibilizarMesa(restaurante, salao, nroMesa, capacidade_cadeira)
+    activate controller
+
+    controller -> class_restaurante : cadastrarMesa(salao, nroMesa, capacidade_cadeira)
+    activate class_restaurante
+
+    class_restaurante -> book : criarNovaMesa(salao, nroMesa, capacidade_cadeira)
+    activate book
+    book -> Mesa **: create(nroMesa)
+    activate Mesa
+    Mesa --> book : response "Mesa criada"
+    deactivate Mesa
+    book --> class_restaurante : response "Mesa criada"
+    deactivate book
+
+    class_restaurante -> Salao : vincularMesa(mesaNova)
+    activate Salao
+    Salao --> class_restaurante : response "Mesa cadastrada"
+    deactivate Salao
+
+    class_restaurante --> controller : response "Mesa cadastrada com sucesso"
+    deactivate class_restaurante
+
+    controller --> fronteira : response "Sucesso no cadastramento da mesa"
+
+    deactivate controller
+    deactivate fronteira
+
+@enduml

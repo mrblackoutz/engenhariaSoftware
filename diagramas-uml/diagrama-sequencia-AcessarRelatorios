@@ -1,0 +1,40 @@
+@startuml
+actor Restaurante as R
+
+boundary "AcessarRelatorioGUI" as GUI
+control "ControladorAcessarRelatorio" as Cntrl
+participant "Relatorio" as Rel
+collections "Relatorios : Relatorio" as RelatoriosCol
+collections "reservas : Reserva" as ReservasCol
+collections "clientes : Cliente" as ClientesCol
+
+R -> GUI : Busca por relatorios disponiveis(data_inicio, data_fim)
+activate GUI
+GUI -> Cntrl : buscaRelatoriosDisponiveis(restaurante, data_inicio, data_fim)
+activate Cntrl
+Cntrl -> RelatoriosCol : buscaRelatoriosDisponiveis(restaurante_plano)
+activate RelatoriosCol
+RelatoriosCol --> Cntrl : relatoriosDisponiveis
+deactivate RelatoriosCol
+Cntrl --> GUI : relatoriosDisponiveis
+R -> GUI : Seleciona relatorio(relatorio)
+
+GUI -> Cntrl : acessarRelatorio(relatorio)
+Cntrl -> Rel : getInformacoes(data_inicio, data_fim)
+activate Rel
+Rel -> ReservasCol : filterReservas(data_inicio, data_fim)
+activate ReservasCol
+ReservasCol --> Rel : reservasPeriodo
+deactivate ReservasCol
+Rel -> ClientesCol : filterClientes(restaurante, data_inicio, data_fim)
+activate ClientesCol
+ClientesCol --> Rel : clientesPeriodo
+deactivate ClientesCol
+Rel --> Cntrl : (reservasPeriodo, clientesPeriodo)
+deactivate Rel
+Cntrl --> GUI : (reservasPeriodo, clientesPeriodo)
+deactivate Cntrl
+GUI --> R : (reservasPeriodo, clientesPeriodo)
+deactivate GUI
+
+@enduml
